@@ -1,4 +1,4 @@
-lines = ["9sixsevenz3",
+input = ["9sixsevenz3",
 "seven1cvdvnhpgthfhfljmnq",
 "6tvxlgrsevenjvbxbfqrsk4seven",
 "9zml",
@@ -1000,19 +1000,24 @@ lines = ["9sixsevenz3",
 "four289"]
 
 
-
-strsum = ""
-sum = 0
-for line in lines:
-    for c in line:
-        if c.isdigit():
-            strsum += c
-            break
-    for c in line[::-1]:
-        if c.isdigit():
-            strsum += c
-            break
-    sum += int(strsum)
+def sumOuterNumbers(lines):
     strsum = ""
-print(sum)
+    sum = 0
+    for line in lines:
+        for c in line:
+            if c.isdigit():
+                strsum += c
+                break
+        for c in line[::-1]:
+            if c.isdigit():
+                strsum += c
+                break
+        sum += int(strsum)
+        strsum = ""
+    return sum
+
+def sumOuterStrings(lines):
+    pass
+
+print(sumOuterNumbers(input))
     
