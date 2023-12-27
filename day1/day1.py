@@ -1,3 +1,6 @@
+from collections import OrderedDict, defaultdict
+import string
+
 class Day1:
 
     char_string_map = {"one"   : 1,
@@ -34,25 +37,57 @@ class Day1:
                 if c.isdigit():
                     value += int(c)
                     break
-        return 
+        return value
     
     @staticmethod
-    def string_preprocessing(lines: list[str]) -> list[str]:
-        min_char_string_length = min([key for key in Day1.char_string_map])
-        max_char_string_length = max([key for key in Day1.char_string_map])
+    def preprocess_strings(lines: list[str]) -> list[int]:
         new_lines = []
-        new_line = []
         for line in lines:
-            l, r = 0, 3
-            while r - l + 1 < max_char_string_length:
-                for digit in Day1.char_string_map:
-                    pos = line[l:r].find(digit)
-                    if pos:
-                        new_line += Day1.char_string_map[digit]
-                        
-                r += 1
+            new_lines.append(Day1.string_preprocessing(line))
+        return new_lines
+    
+    @staticmethod
+    def string_preprocessing(line: str) -> int:
+        min_char_string_length = min([len(key) for key in Day1.char_string_map])
+        max_char_string_length = max([len(key) for key in Day1.char_string_map])
+        new_line = []
+        l, r = 0, min_char_string_length
+        while l < len(line):
+            if line[l] in string.digits:
+                new_line.append(int(line[l]))
+            else:
+                for number in Day1.char_string_map:
+                    r = l + min_char_string_length
+                    while r - l <= max_char_string_length:
+                        if r > len(line):
+                            r = len(line)
+                        print(l, r, line[l:r], number)
+                        if number == line[l:r]:
+                            new_line.append(Day1.char_string_map[number])
+                            l = r
+                            r = l + min_char_string_length
+                            break
+                        r += 1
             l += 1
-            r = l + 2
+            r = l + min_char_string_length
+        return new_line
+
+        # for line in lines:
+        #     digit_pos = 1
+        #     while digit_pos:
+        #         digit_strings = defaultdict(list)
+        #         for digit in Day1.char_string_map:
+        #             digit_pos = line.find(digit)
+        #             if digit_pos:
+        #                 digit_strings[digit_pos].append(digit)
+        #         if digit_strings:
+        #             for i in len(line):
+        #                 if i in digit_strings:
+        #                     line = line[:i] + str(digit_strings) + line[i + len(Day1.char_string_map[digit_strings]):]
+
+            
+                    
+
 
                 
                 
@@ -60,14 +95,17 @@ class Day1:
 
     @staticmethod
     def sum_outer_strings(lines: list[str]) -> int:
+        pass
 
 
     @staticmethod
     def get_input() -> list[str]:
         with open("input.txt", 'r') as f:
-            lines = f.readlines()
+            lines = f.read().splitlines()
         return lines
 
 if __name__ == '__main__':
-    pass
+    day1 = Day1()
+    print(day1.string_preprocessing("9sixsevenz3"))
+
     
