@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <set>
 #include <cctype>
+#include <algorithm>
 
 class Day1 {
 
@@ -46,11 +47,16 @@ public:
     }
 
     int part1() {
-        std::vector<std::vector<int>> processedLines = preprocessStrings();
+        std::vector<std::vector<int>> processedLines = preprocessStringsPart1();
         return sumOuterNumbers(processedLines);
     }
 
-    std::vector<std::vector<int>> preprocessStrings() {
+    int part2() {
+        std::vector<std::vector<int>> processedLines = preprocessStringsPart2();
+        return sumOuterNumbers(processedLines);
+    }
+
+    std::vector<std::vector<int>> preprocessStringsPart1() {
         std::vector<std::vector<int>> processedLines{};
         std::vector<int> processedLine{};
         for (const auto& line : lines) {
@@ -63,6 +69,35 @@ public:
             processedLines.push_back(processedLine);
         }
         return processedLines;
+    }
+
+    std::vector<std::vector<int>> preprocessStringsPart2() {
+        std::vector<std::vector<int>> processedLines{};
+        int l = 0;
+        for (const auto& line : lines) {
+            std::vector<int> processedLine{};
+            while (l < line.size()) {
+                if (std::find(words.begin(), words.end(), line[l]) != words.end())
+                    processedLine.push_back(static_cast<int>(line[l] - '0'));
+                else {
+                    int answer = isStringRangeValid(line, l);
+                    if (answer != 0) 
+                        processedLine.push_back(answer);
+                }
+                l++;
+            }
+            return processedLines;
+        }
+    }
+
+    int isStringRangeValid(std::string line, int l) {
+        int r = l + 3;
+        while (r - l <= 5 and r < line.size() + 1) {
+            if (wordsToInt.find( line.substr(l, r - l + 1) ) != wordsToInt.end())
+                return wordsToInt.at(line.substr(l, r - l + 1));
+            r++;
+        }
+        return 0;
     }
 
     int sumOuterNumbers(std::vector<std::vector<int>> processedLines) {
