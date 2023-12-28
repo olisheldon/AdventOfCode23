@@ -35,8 +35,7 @@ class Day1:
         assert len(lines) >= 1 and all(all((type(item) == int) for item in line) for line in lines)
         value = 0
         for line in lines:
-            value += 10 * line[0]
-            value += line[-1]
+            value += 10 * line[0] + line[-1]
         return value
     
     @staticmethod
@@ -84,15 +83,10 @@ class Day1:
         return lines
 
 if __name__ == "__main__":
-    if len(sys.argv) <= 1:
-        raise RuntimeError(f"Argument is not recognised. Please enter part1 or part2.")
-
 
     day1 = Day1()
-    if sys.argv[1].lower() == "part1":
-        print(day1.part_1())
-    elif sys.argv[1].lower() == "part2":
-        print(day1.part_2())
-    else:
-        raise RuntimeError(f"Argument {sys.argv[1]} is not recognised. Please enter part1 or part2.")
+
+    print("Python Solution:")
+    print(f"\tPart 1: {day1.part_1()}")
+    print(f"\tPart 2: {day1.part_2()}")
     

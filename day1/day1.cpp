@@ -1,16 +1,30 @@
 #include <iostream>
 #include <fstream>
+#include <algorithm>
 #include <vector>
 #include <string>
 #include <unordered_map>
-#include <set>
-#include <cctype>
-#include <algorithm>
 
 class Day1 {
 
-
 public:
+
+    Day1() {
+        lines = getLines();
+    }
+
+    int part1() {
+        std::vector<std::vector<int>> processedLines = preprocessStringsPart1();
+        return sumOuterNumbers(processedLines);
+    }
+
+    int part2() {
+        std::vector<std::vector<int>> processedLines = preprocessStringsPart2();
+        return sumOuterNumbers(processedLines);
+    }
+
+private:
+
     std::vector<std::string> lines;
     std::unordered_map<std::string, int> wordsToInt{{"one",   1},
                                                     {"two",   2},
@@ -31,9 +45,15 @@ public:
                                       "eight",
                                       "nine"};
 
-    Day1() {
-        lines = getLines();
-    }
+    std::vector<char> digits = {'1',
+                                '2',
+                                '3',
+                                '4',
+                                '5',
+                                '6',
+                                '7',
+                                '8',
+                                '9'};
 
     std::vector<std::string> getLines() {
         std::ifstream myfile("input.txt");
@@ -44,16 +64,6 @@ public:
             input.push_back(line);
         }
         return input;
-    }
-
-    int part1() {
-        std::vector<std::vector<int>> processedLines = preprocessStringsPart1();
-        return sumOuterNumbers(processedLines);
-    }
-
-    int part2() {
-        std::vector<std::vector<int>> processedLines = preprocessStringsPart2();
-        return sumOuterNumbers(processedLines);
     }
 
     std::vector<std::vector<int>> preprocessStringsPart1() {
@@ -73,11 +83,13 @@ public:
 
     std::vector<std::vector<int>> preprocessStringsPart2() {
         std::vector<std::vector<int>> processedLines{};
-        int l = 0;
+        int l;
+        std::vector<int> processedLine;
         for (const auto& line : lines) {
-            std::vector<int> processedLine{};
+            processedLine = {};
+            l = {};
             while (l < line.size()) {
-                if (std::find(words.begin(), words.end(), line[l]) != words.end())
+                if (std::find(digits.begin(), digits.end(), line[l]) != std::end(digits))
                     processedLine.push_back(static_cast<int>(line[l] - '0'));
                 else {
                     int answer = isStringRangeValid(line, l);
@@ -86,13 +98,15 @@ public:
                 }
                 l++;
             }
-            return processedLines;
+            processedLines.push_back(processedLine);
         }
+        return processedLines;
     }
 
     int isStringRangeValid(std::string line, int l) {
-        int r = l + 3;
-        while (r - l <= 5 and r < line.size() + 1) {
+        int r = l + 2;
+        // std::cout << line << " " << line.substr(l, r - l + 1) << std::endl;
+        while (r - l <= 5 && r < line.size() + 1) {
             if (wordsToInt.find( line.substr(l, r - l + 1) ) != wordsToInt.end())
                 return wordsToInt.at(line.substr(l, r - l + 1));
             r++;
@@ -103,8 +117,7 @@ public:
     int sumOuterNumbers(std::vector<std::vector<int>> processedLines) {
         int sum{};
         for (const auto& line : processedLines) {
-            sum += 10 * line.front();
-            sum += line.back();
+            sum += 10 * line.front() + line.back();
         }
         return sum;
     }
@@ -115,8 +128,7 @@ int main(int argc, char* argv[]) {
 
     Day1 day1{};
 
-    int result = day1.part1();
-    std::cout << "Task 1: " << result << std::endl;
-    
-    return 1;
+    std::cout << "C++ Solution:" << std::endl;
+    std::cout << "\tPart 1: " << day1.part1() << std::endl;
+    std::cout << "\tPart 2: " << day1.part2() << std::endl;
 }
