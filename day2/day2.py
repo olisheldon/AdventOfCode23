@@ -31,7 +31,7 @@ class DiceDict(UserDict):
                 return False
         return True
     
-    def update_max(self, dice_set) -> None:
+    def update_max(self, dice_set: 'DiceDict') -> None:
         for die in Dice:
             if dice_set[die] > self[die]:
                 self[die] = dice_set[die]

@@ -105,7 +105,6 @@ private:
 
     int isStringRangeValid(std::string line, int l) {
         int r = l + 2;
-        // std::cout << line << " " << line.substr(l, r - l + 1) << std::endl;
         while (r - l <= 5 && r < line.size() + 1) {
             if (wordsToInt.find( line.substr(l, r - l + 1) ) != wordsToInt.end())
                 return wordsToInt.at(line.substr(l, r - l + 1));

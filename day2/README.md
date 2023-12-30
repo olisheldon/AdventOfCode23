@@ -1,0 +1,1 @@
+day2 cpp does not make proper use of const. This should be changed
