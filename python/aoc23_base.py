@@ -2,6 +2,9 @@ from abc import abstractmethod, ABC
 
 class DayBase(ABC):
 
+    def __init__(self):
+        self.input = self.get_input()
+
     @abstractmethod
     def part_1(self) -> int:
         pass
