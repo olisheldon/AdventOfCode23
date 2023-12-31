@@ -1,4 +1,5 @@
 import string
+from functools import reduce
 
 class Number:
     
@@ -19,13 +20,19 @@ class Number:
 
 class Symbol:
     
-    def __init__(self, coord: tuple[int, int]):
+    def __init__(self, coord: tuple[int, int], symbol: str):
         self.coord = coord
+        self.symbol = symbol
+
+    @property
+    def is_gear(self) -> bool:
+        return self.symbol == '*'
 
 class Day3:
 
     def __init__(self):
         self.input: list[str] = Day3.get_input()
+        self.numbers, self.symbols = self.parse()
 
     @staticmethod
     def get_input() -> list[str]:
@@ -34,17 +41,27 @@ class Day3:
         return lines
     
     def part1(self) -> int:
-        numbers, symbols = self.parse()
-
-        symbols_coords = [symbol.coord for symbol in symbols]
         i = 0
-        for number in numbers:
-            for symbol_coord in symbols_coords:
-                if number.within_boundary(symbol_coord):
+        for number in self.numbers:
+            for symbol in self.symbols:
+                if number.within_boundary(symbol.coord):
                     i += number.num
                     break
         return i
-        
+    
+    def part2(self) -> int:
+        result = 0
+        for symbol in self.symbols:
+            if symbol.is_gear:
+                number_count = 0
+                number_vals = []
+                for number in self.numbers:
+                    if number.within_boundary(symbol.coord):
+                        number_count += 1
+                        number_vals.append(number.num)
+                if number_count == 2:
+                    result += reduce((lambda x, y: x * y), number_vals)
+        return result
 
     def parse(self) -> tuple[list[Number], list[Symbol]]:
         numbers = []
@@ -59,7 +76,7 @@ class Day3:
                         i += 1
                     numbers.append(Number(int(num_str), i, line_num))
                 elif line[i] != '.':
-                    symbols.append(Symbol((line_num, i)))
+                    symbols.append(Symbol((line_num, i), line[i]))
                     i += 1
                 else:
                     i += 1
@@ -70,3 +87,4 @@ class Day3:
 if __name__ == "__main__":
     day3 = Day3()
     print(day3.part1())
+    print(day3.part2())
