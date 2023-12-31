@@ -1,8 +1,11 @@
 import string
 import sys
+from overrides import override
+
+from aoc23_base import DayBase
 
 
-class Day1:
+class Day1(DayBase):
 
     char_string_map = {"one"   : 1,
                        "two"   : 2,
@@ -20,7 +23,7 @@ class Day1:
     inverse_char_string_map = {k[::-1] : v for k, v in char_string_map.items()}
 
     def __init__(self):
-        self.input = Day1.get_input()
+        self.input = self.get_input()
 
     def part_1(self) -> int:
         lines = Day1.preprocess_strings(self.input, Day1.string_preprocessing_part_1)
@@ -75,12 +78,6 @@ class Day1:
                 return Day1.char_string_map[line[l:r]]
             r += 1
         return 0
-
-    @staticmethod
-    def get_input() -> list[str]:
-        with open("input.txt", 'r') as f:
-            lines = f.read().splitlines()
-        return lines
 
 if __name__ == "__main__":
 
