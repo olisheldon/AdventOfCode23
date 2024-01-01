@@ -1,18 +1,11 @@
 from overrides import override
-
 from aoc23_base import DayBase
 
 class WinningNumbers(set):
     pass
-    
-    # def __init__(self, winning_numbers: list[int]):
-    #     self.winning_numbers: set[int] = set(winning_numbers)
 
 class ScratchcardNumbers(set):
     pass
-    
-    # def __init__(self, scratchcard_numbers: list[int]):
-    #     self.scratchcard_numbers: set[int] = set(scratchcard_numbers)
 
 class Scratchcard:
     
@@ -26,8 +19,6 @@ class MultipleScratchcards(list):
     def __init__(self, scratchcards: list[Scratchcard]):
         super(MultipleScratchcards, self).__init__(scratchcards)
         self.number_of_scratchcards: list[int] = [1 for i in range(len(scratchcards))]
-
-
 
 class Day4(DayBase):
     
