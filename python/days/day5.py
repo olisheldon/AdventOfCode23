@@ -52,7 +52,7 @@ class Maps(list):
                 previous[1] = max(previous[1], current[1])
             else:
                 merged.append(current)
-        return [(interval[0], interval[1]) for interval in list_intervals]
+        return [(merge[0], merge[1]) for merge in merged]
 
     def _create_seed_ranges_requiring_work(self, pipeline: list[Map]) -> list[tuple[int,int]]:
         ranges = []
@@ -111,9 +111,13 @@ class Day5(DayBase):
         #         result = min(result, self.maps.query(seed))
         # return result
 
-        seed_ranges_merged = Maps._merge_intervals(self.seed_ranges)
-        map_ranges_requiring_work = self.maps.seed_ranges_requiring_work
+        # seed_ranges_merged = Maps._merge_intervals(self.seed_ranges)
+        # map_ranges_requiring_work = self.maps.seed_ranges_requiring_work
 
-        seeds_requiring_mapping = Maps._merge_intervals(list(itertools.chain(seed_ranges_merged, map_ranges_requiring_work)))
+        # seeds_requiring_mapping = Maps._merge_intervals(list(itertools.chain(seed_ranges_merged, map_ranges_requiring_work)))
 
+        # print(seed_ranges_merged)
+        # print(seeds_requiring_mapping)
+
+        print(Maps._merge_intervals([(4,5), (1,4)]))
         
