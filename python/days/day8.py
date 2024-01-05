@@ -2,6 +2,9 @@ from overrides import override
 from aoc23_base import DayBase
 from enum import StrEnum, auto
 from itertools import cycle
+from functools import reduce
+import math
+
 class MoveInstruction(StrEnum):
     L = auto(),
     R = auto()
@@ -24,12 +27,11 @@ class Node:
     def move_once(self, mi: MoveInstruction) -> 'Node':
         match mi:
             case MoveInstruction.L:
-                curr_node = self.left
+                return self.left
             case MoveInstruction.R:
-                curr_node = self.right
+                return self.right
             case _:
                 raise RuntimeError(f"{mi} is not a recognised move")
-        return curr_node
 
 class NodesBase:
 
@@ -38,6 +40,7 @@ class NodesBase:
         node_dict = {node[0].node_name : node[0] for node in self.node_instances}
         self.nodes: dict[str, Node] = self._add_nodes(node_dict)
         self.move_instructions = move_instructions
+        self.cycle: cycle = cycle(move_instructions)
 
     def _add_nodes(self, node_dict: dict[str, Node]) -> dict[str, Node]:
         nodes: dict[str, Node] = {}
@@ -54,14 +57,12 @@ class Nodes(NodesBase):
         super().__init__(nodes, move_instructions)
     
     def move(self, starting_node: Node) -> int:
-        cycle_move_instructions: cycle = cycle(self.move_instructions)
         curr_node: Node = starting_node
 
         moves = 0
         while not curr_node.ending_node: 
             moves += 1
-            mi = next(cycle_move_instructions)
-            curr_node = curr_node.move_once(mi)
+            curr_node = curr_node.move_once(next(self.cycle))
         return moves
     
 class SimultaneousNodes(NodesBase):
@@ -70,15 +71,34 @@ class SimultaneousNodes(NodesBase):
         super().__init__(nodes, move_instructions)
 
     def move(self, starting_nodes: list[Node]) -> int:
-        cycle_move_instructions: cycle = cycle(self.move_instructions)
-        # starting_nodes: list[Node] = [node for (node_str, node) in self.nodes.items() if node_str.endswith("A")]
         moves = 0
-        while (not all(starting_node.ending_node for starting_node in starting_nodes)):
+        first_hit_per_node = [0] * len(starting_nodes)
+
+        while not all(first_hit_per_node):
             moves += 1
-            next_move = next(cycle_move_instructions)
-            for starting_node in starting_nodes:
-                starting_node.move_once(next_move)
-        return moves
+            next_move = next(self.cycle)
+            for i in range(len(starting_nodes)):
+                starting_nodes[i] = starting_nodes[i].move_once(next_move)
+            for i, starting_node in enumerate(starting_nodes):
+                if not first_hit_per_node[i] and starting_node.ending_node:
+                    first_hit_per_node[i] = moves
+                    
+        prime_factors = []
+        for num_of_moves in first_hit_per_node:
+            prime_factors += self._primeFactors(num_of_moves)
+        return reduce(lambda x, y : x * y, set(prime_factors))
+    
+    def _primeFactors(self, n):
+        res = []
+        while n % 2 == 0:
+            n = n // 2
+        for i in range(3, int(math.sqrt(n))+1, 2):
+            while n % i == 0:
+                res.append(i)
+                n = n // i
+        if n > 2:
+            res.append(n)
+        return res
     
 class Day8(DayBase):
     
