@@ -1,6 +1,6 @@
 from overrides import override
 from aoc23_base import DayBase
-    
+
 class History:
 
     def __init__(self, values_str: list[str]):
@@ -15,6 +15,7 @@ class History:
 
     @staticmethod
     def _generate_differences(init_values: list[int]) -> list[list[int]]:
+
         differences: list[list[int]] = [init_values]
         while any(differences[-1]):
             new_difference = []
@@ -37,20 +38,23 @@ class Day9(DayBase):
     
     def __init__(self):
         super().__init__()
-        histories = self.parse()
-        self.histories: list[History] = [History(history) for history in histories]
-
+        self.histories: list[list[str]] = self.parse()
 
     def parse(self) -> list[list[str]]:
         return [line.split() for line in self.input]
     
     @override
     def part_1(self) -> int:
-        return sum(history.get_sum_of_final_values() for history in self.histories)
+        histories = [History(history) for history in self.histories]
+
+        return sum(history.get_sum_of_final_values() for history in histories)
 
     @override
     def part_2(self) -> int:
-        pass
+        reversed_histories = [history[::-1] for history in self.histories]
+        histories = [History(history) for history in reversed_histories]
+
+        return sum(history.get_sum_of_final_values() for history in histories)
 
 if __name__ == "__main__":
     day9 = Day9()
