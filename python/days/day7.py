@@ -1,12 +1,78 @@
 from overrides import override
 from aoc23_base import DayBase
-from enum import auto, IntEnum
+from enum import auto, IntEnum, EnumMeta
 from collections import Counter, OrderedDict
 from itertools import cycle
+from typing import Callable, Type
 
+class CardHelperMixin:
 
+    def __repr__(self) -> str:
+        return self.card_to_char(self)
 
-class Card(IntEnum):
+    @classmethod
+    def char_to_card(cls, c: str):
+        match c:
+            case "A":
+                return cls.ACE
+            case "K":
+                return cls.KING
+            case "Q":
+                return cls.QUEEN
+            case "J":
+                return cls.JACK
+            case "T":
+                return cls.TEN
+            case "9":
+                return cls.NINE
+            case "8":
+                return cls.EIGHT
+            case "7":
+                return cls.SEVEN
+            case "6":
+                return cls.SIX
+            case "5":
+                return cls.FIVE
+            case "4":
+                return cls.FOUR
+            case "3":
+                return cls.THREE
+            case "2":
+                return cls.TWO
+        raise RuntimeError(f"Card string {c} not recognised.")
+
+    @classmethod
+    def card_to_char(cls, card):
+        match card:
+            case cls.ACE:
+                return "A"
+            case cls.KING:
+                return "K"
+            case cls.QUEEN:
+                return "Q"
+            case cls.JACK:
+                return "J"
+            case cls.TEN:
+                return "T"
+            case cls.NINE:
+                return "9"
+            case cls.EIGHT:
+                return "8"
+            case cls.SEVEN:
+                return "7"
+            case cls.SIX:
+                return "6"
+            case cls.FIVE:
+                return "5"
+            case cls.FOUR:
+                return "4"
+            case cls.THREE:
+                return "3"
+            case cls.TWO:
+                return "2"
+        raise RuntimeError(f"Card string {c} not recognised.")
+
+class Card(CardHelperMixin, IntEnum):
     TWO = auto(),
     THREE = auto(),
     FOUR = auto(),
@@ -21,21 +87,20 @@ class Card(IntEnum):
     KING = auto(),
     ACE = auto(),
 
-# class CardWithJoker(IntEnum):
-#     JACK = auto(),
-#     TWO = auto(),
-#     THREE = auto(),
-#     FOUR = auto(),
-#     FIVE = auto(),
-#     SIX = auto(),
-#     SEVEN = auto(),
-#     EIGHT = auto(),
-#     NINE = auto(),
-#     TEN = auto(),
-#     QUEEN = auto(),
-#     KING = auto(),
-#     ACE = auto(),
-
+class CardWithJoker(CardHelperMixin, IntEnum):
+    JACK = auto(),
+    TWO = auto(),
+    THREE = auto(),
+    FOUR = auto(),
+    FIVE = auto(),
+    SIX = auto(),
+    SEVEN = auto(),
+    EIGHT = auto(),
+    NINE = auto(),
+    TEN = auto(),
+    QUEEN = auto(),
+    KING = auto(),
+    ACE = auto(),
 
 class HandType(IntEnum):
     HIGH_CARD = auto(),
@@ -56,6 +121,9 @@ class Hand:
     def __init__(self, cards: tuple[Card, Card, Card, Card, Card], primary_ranking):
         self.cards: tuple[Card, Card, Card, Card, Card] = cards
         self.primary_ranking: HandType = primary_ranking(self.cards)
+
+    def __repr__(self) -> str:
+        return f"{''.join([card.card_to_char(card.value) for card in self.cards])} {self.primary_ranking.name}"
 
     def secondary_comparison(self, hand: 'Hand') -> SecondaryCheck:
         for my_card, other_card in zip(self.cards, hand.cards):
@@ -107,6 +175,9 @@ class Player:
         self.hand = Hand(cards, primary_ranking)
         self.bid: int = bid
     
+    def __repr__(self) -> str:
+        return f"{self.hand} {self.bid}"
+    
     def __lt__(self, other: 'Player') -> bool:
         return self.hand.__lt__(other.hand)
 
@@ -137,10 +208,10 @@ class Day7(DayBase):
 
         # self.players: list[Player] = [] # can only be created once we know the properties of the deck
 
-    def create_players(self, list_of_cards: list[str], bids: list[int], CardEnum, primary_ranking) -> list[Player]:
+    def create_players(self, list_of_cards: list[str], bids: list[int], CardEnum: Type[CardHelperMixin], primary_ranking: Callable) -> list[Player]:
         players = []
         for cards, bid in zip(list_of_cards, bids):
-            enum_cards = tuple(CardEnum.create_card(c) for c in cards)
+            enum_cards = tuple(CardEnum.char_to_card(c) for c in cards)
             players.append(Player(enum_cards, bid, primary_ranking))
         return players
 
@@ -155,8 +226,6 @@ class Day7(DayBase):
     
     @override
     def part_1(self) -> int:
-        card_order = "AKQJT98765432"
-        CardEnum = EnumBuilder(card_order).DeckEnum
 
         def primary_ranking(cards: tuple[Card, Card, Card, Card, Card]) -> 'HandType':
             unique_cards = set(cards)
@@ -180,7 +249,7 @@ class Day7(DayBase):
                     return HandType.HIGH_CARD
             raise RuntimeError("did not recognise card")
 
-        players = self.create_players(self.list_of_cards, self.bids, CardEnum, primary_ranking)
+        players = self.create_players(self.list_of_cards, self.bids, Card, primary_ranking)
 
         result = 0
         for i, player in enumerate(sorted(players)):
@@ -190,25 +259,23 @@ class Day7(DayBase):
 
     @override
     def part_2(self) -> int:
-        card_order = "AKQT98765432J"
-        CardEnum = EnumBuilder(card_order).DeckEnum
 
-        def primary_ranking(cards: tuple[Card, Card, Card, Card, Card]) -> 'HandType':
-            cards_without_jack = [card for card in Card if not Card.JACK]
+        def primary_ranking(cards: tuple[CardWithJoker, CardWithJoker, CardWithJoker, CardWithJoker, CardWithJoker]) -> 'HandType':
+            cards_without_jack = [card for card in CardWithJoker if card != CardWithJoker.JACK]
+            list_of_possible_cards = [[]]
 
-            possible_cards: list[list[Card]] = [[]]
-            for i in range(len(cards)):
-                if cards[i] is not Card.JACK:
-                    for k in range(len(possible_cards)):
-                        possible_cards[k].append(cards[i])
+            for card in cards:
+                if card != CardWithJoker.JACK:
+                    for possible_cards in list_of_possible_cards:
+                        possible_cards.append(card)
                 else:
-                    possible_cards = len(cards_without_jack) * possible_cards
-                    for j in range(len(possible_cards)):
-                        cycle_cards = cycle(cards_without_jack)
-                        possible_cards[j].append(next(cycle_cards))
+                    list_of_possible_cards = [possible_cards.copy() for _ in range(len(cards_without_jack)) for possible_cards in list_of_possible_cards]
+                    cycle_cards = cycle(cards_without_jack)
+                    for possible_cards in list_of_possible_cards:
+                        possible_cards.append(next(cycle_cards))
 
             best_hand: HandType = HandType.HIGH_CARD
-            for possible_card in possible_cards:
+            for possible_card in list_of_possible_cards:
                 unique_cards = set(possible_card)
                 counter = Counter(possible_card)
                 match len(unique_cards):
@@ -229,51 +296,18 @@ class Day7(DayBase):
                     case 5:
                         best_hand = max(best_hand, HandType.HIGH_CARD)
                     case _:
-                        raise RuntimeError("did not recognise card")
+                        raise RuntimeError(f"did not recognise card {len(unique_cards)}")
             return best_hand
 
-
             
-        players = self.create_players(self.list_of_cards, self.bids, CardEnum, primary_ranking)
+        players = self.create_players(self.list_of_cards, self.bids, CardWithJoker, primary_ranking)
 
         result = 0
         for i, player in enumerate(sorted(players)):
             result += (i + 1) * player.bid
         return result
     
-class EnumBuilder:
-
-    def __init__(self, card_order: str):
-        self.DeckEnum = IntEnum("CustomCard", OrderedDict((card, auto()) for card in card_order))
-        self.DeckEnum.create_card = EnumBuilder.create_card
-    
-    @staticmethod
-    def create_card(c: str):
-        match c:
-            case "A":
-                return Card.ACE
-            case "K":
-                return Card.KING
-            case "Q":
-                return Card.QUEEN
-            case "J":
-                return Card.JACK
-            case "T":
-                return Card.TEN
-            case "9":
-                return Card.NINE
-            case "8":
-                return Card.EIGHT
-            case "7":
-                return Card.SEVEN
-            case "6":
-                return Card.SIX
-            case "5":
-                return Card.FIVE
-            case "4":
-                return Card.FOUR
-            case "3":
-                return Card.THREE
-            case "2":
-                return Card.TWO
-        raise RuntimeError(f"Card string {c} not recognised.")
+if __name__ == "__main__":
+    day7 = Day7()
+    print(day7.part_1())
+    print(day7.part_2())
