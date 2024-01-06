@@ -11,6 +11,11 @@ class Coord:
     def __add__(self, other: 'Coord') -> 'Coord':
         return Coord(self.i + other.i, self.j + other.j)
     
+class Segment(Enum):
+    INSIDE = auto(),
+    OUTSIDE = auto(),
+    NEITHER = auto(),
+
 class Move(Enum):
     NORTH = auto(), 
     EAST = auto(), 
@@ -32,8 +37,6 @@ class Move(Enum):
                 return Coord(0, -1)
             case _:
                 return Coord(0, 0)
-                # raise RuntimeError(f"Move {move} is not recognised.")
-
 
 class TileType(Enum):
     VERTICAL = auto(), 
@@ -73,6 +76,7 @@ class Tile:
 
     def __init__(self, tile_char: str):
         self.tile_type: TileType = TileType.from_str(tile_char)
+        self.segment: Segment = Segment.NEITHER
     
     def __repr__(self) -> str:
         return self.tile_type.name
@@ -133,6 +137,10 @@ class Tile:
                 raise RuntimeError(f"Tile type {move_in} should not be called with {self.__name__}.")
             case _:
                 raise RuntimeError(f"Tile type {move_in} not recognised.")
+            
+    def declare_segment(self, segment: Segment):
+        if self.tile_type == TileType.GROUND:
+            self.segment = segment
 
 
 class Maze:
@@ -144,39 +152,65 @@ class Maze:
             for j in range(len(tiles[0])):
                 coord = Coord(i, j)
                 self.tiles[coord] = Tile(tiles[i][j])
-                if self.tiles[coord].tile_type is TileType.START:
+                if self.tiles[coord].tile_type == TileType.START:
                     self.start = coord
 
     def get_beginning_moves(self) -> list[Move]:
-        return list(move for move in Move if self.tiles[self.start + Move.move_to_coord_offset(move)].move(move) is not Move.INVALID)
+        return list(move for move in Move if self.tiles[self.start + Move.move_to_coord_offset(move)].move(move) != Move.INVALID)
     
-    def furthest_point(self) -> int:
+    def traverse_pipes(self) -> int:
         beginning_moves: list[Move] = self.get_beginning_moves()
         move = beginning_moves[0]
         move_count = 1
         coord = self.start + Move.move_to_coord_offset(move)
-        while self.tiles[coord].tile_type is not TileType.START:
+        while self.tiles[coord].tile_type != TileType.START:
             move = self.tiles[coord].move(move)
             coord += Move.move_to_coord_offset(move)
             move_count += 1
+        return move_count
+    
+    def furthest_point(self) -> int:
+        move_count = self.traverse_pipes()
         return move_count // 2 + 1 if move_count % 2 else move_count // 2
+    
+    def spread_segment(self):
+        coord_offsets = (Coord(-1, -1), Coord(1, -1), Coord(-1, 1), Coord(1, 1))
+        for tile_coord, tile in self.tiles.items():
+            if tile.tile_type == TileType.GROUND and tile.segment:
+                for coord_offset in coord_offsets:
+                    coord = tile_coord + coord_offset
+                    if coord in self.tiles:
+                        self.tiles[coord].segment = tile.segment
+    
+    def count_ground_inside(self) -> int:
+        count = 0
+        for tile in self.tiles.values():
+            if tile.segment == Segment.INSIDE:
+                count += 1
+        return count
+
+    
 
 class Day10(DayBase):
     
     def __init__(self):
         super().__init__()
-        self.maze = Maze(self.input)
 
     def parse(self) -> list[str]:
         return self.input
     
     @override
     def part_1(self) -> int:
-        return self.maze.furthest_point()
+        maze = Maze(self.input)
+        return maze.furthest_point()
     
     @override
     def part_2(self) -> int:
-        pass
+        maze = Maze(self.input)
+        maze.traverse_pipes()
+        maze.spread_segment()
+        return maze.count_ground_inside()
+
 
 if __name__ == "__main__":
     day10 = Day10()
