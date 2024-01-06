@@ -3,8 +3,6 @@ from aoc23_base import DayBase
 from enum import Enum, auto
 from itertools import combinations
 from dataclasses import dataclass
-# import sys
-# sys.setrecursionlimit(10000)
 
 class Pixel(Enum):
     GALAXY = auto(),
@@ -95,16 +93,16 @@ class Image:
                 empty_columns.add(j)
         return empty_columns, empty_rows
     
-    def find_distances(self) -> int:
+    def find_distances(self, expansion_coefficient: int = 2) -> int:
         moves = 0
         for gal1, gal2 in combinations(self.galaxies, 2):
             move = 0
             for coord in gal1.get_path(gal2):
                 if coord != gal1:
                     if coord.i in self.empty_columns:
-                        move += 2
+                        move += expansion_coefficient
                     elif coord.j in self.empty_rows:
-                        move += 2
+                        move += expansion_coefficient
                     else:
                         move += 1
             moves += move
@@ -125,7 +123,7 @@ class Day11(DayBase):
 
     @override
     def part_2(self) -> int:
-        pass
+        return self.image.find_distances(expansion_coefficient=1000000)
 
 if __name__ == "__main__":
     day11 = Day11()
