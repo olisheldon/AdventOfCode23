@@ -87,7 +87,6 @@ class Day15(DayBase):
     def part_2(self) -> int:
         sequence_elements = [InitSequenceElement(s) for s in self.parse()]
         for sequence_element in sequence_elements:
-            print(sequence_element)
             box = self.boxes[sequence_element.hash_value]
             match sequence_element.operation:
                 case Operation.MINUS:
@@ -106,11 +105,6 @@ class Day15(DayBase):
                         box.append(sequence_element)
                 case _:
                     raise RuntimeError(f"operation {sequence_element.operation} not recognised.")
-        
-        print(sequence_elements)
-        for box in self.boxes:
-            print(box)
-
 
         score = 0
         for box_number, box in enumerate(self.boxes):
