@@ -143,23 +143,22 @@ class MirrorTyle(Enum):
                 raise RuntimeError(f"MirrorTyle {mirror_tyle} should not use {__class__}.")
         return directions
 
-
 class MirrorElementState(Enum):
     ENERGIZED = auto(),
     NOT_ENERGIZED = auto(),
 
 class Mirror:
 
-    def __init__(self, mirror: list[list[str]], position: tuple[int, int] = (0, 0), direction: Direction = Direction.EAST):
+    def __init__(self, mirror: list[list[str]], lasers: list[Laser] = [Laser(Coord(0, 0), Direction.EAST)]):
         self.mirror: list[list[MirrorTyle]] = list(list(MirrorTyle.from_str(tyle) for tyle in row) for row in mirror)
         self.mirror_state: list[list[MirrorElementState]] = list(list(MirrorElementState.NOT_ENERGIZED for tyle in row) for row in mirror)
-        self.lasers: list[Laser] = [Laser(Coord(position[0], position[1]), direction)]
+        self.lasers: list[Laser] = lasers
 
 
     def _valid_coord(self, coord: Coord) -> bool:
         return 0 <= coord.i < len(self.mirror_state) and 0 <= coord.j < len(self.mirror_state[0])
 
-    def shoot_laser(self):
+    def shoot_laser(self) -> int:
         laser_states = set()
 
         while self.lasers:
@@ -172,12 +171,11 @@ class Mirror:
                     new_laser = Laser(laser.coord + Direction.move(direction), direction)
                     if self._valid_coord(new_laser.coord):
                         self.lasers.append(new_laser)
+        return self.energized
     
     @property
     def energized(self) -> int:
         return sum(element is MirrorElementState.ENERGIZED for row in self.mirror_state for element in row)
-
-
 
 class Day16(DayBase):
     
@@ -187,12 +185,22 @@ class Day16(DayBase):
     @override
     def part_1(self) -> int:
         mirror = Mirror([[c for c in line] for line in self.input])
-        mirror.shoot_laser()
-        return mirror.energized
+        return mirror.shoot_laser()
 
     @override
     def part_2(self) -> int:
         pass
+        min_i, max_i = 0, len(self.input) - 1
+        min_j, max_j = 0, len(self.input[0]) - 1
+        lasers_going_north = [Laser(Coord(max_i, j), Direction.NORTH) for j in range(max_j + 1)]
+        lasers_going_east  = [Laser(Coord(i, min_j), Direction.EAST)  for i in range(max_i + 1)]
+        lasers_going_south = [Laser(Coord(min_i, j), Direction.SOUTH) for j in range(max_j + 1)]
+        lasers_going_west  = [Laser(Coord(i, max_j), Direction.WEST)  for i in range(max_i + 1)]
+        return max(Mirror([[c for c in line] for line in self.input], [laser]).shoot_laser() for laser in lasers_going_north +
+            lasers_going_east +
+            lasers_going_south +
+            lasers_going_west
+        )
 
 if __name__ == "__main__":
     day16 = Day16()
