@@ -1,8 +1,9 @@
 from overrides import override
+
 from aoc23_base import DayBase
 from enum import Enum, auto
 import copy
-from functools import reduce
+from dataclasses import dataclass
 
 class PlatformObject(Enum):
     ROUND_ROCK = auto(),
@@ -54,11 +55,17 @@ class PlatformObject(Enum):
     def moveable(self) -> bool:
         return self is self.ROUND_ROCK
 
-    
+class Direction(Enum):
+    NORTH = auto(),
+    WEST = auto(),
+    SOUTH = auto(),
+    EAST = auto(),
+
 class ControlPlatform:
 
     def __init__(self, control_platform: list[list[PlatformObject]]):
         self.control_platform: list[list[PlatformObject]] = control_platform
+        self.cache: dict[tuple[tuple[PlatformObject]], list[list[PlatformObject]]] = {}
 
     def __str__(self) -> str:
         return self.__repr__()
@@ -66,8 +73,9 @@ class ControlPlatform:
     def __repr__(self) -> str:
         return "\n".join("".join([PlatformObject.from_platform_object(element) for element in row]) for row in self.control_platform) + "\n" + '&' * len(self.control_platform[0])
     
-    def __eq__(self, other: 'ControlPlatform') -> bool:
-        return self.control_platform.__repr__() == other.control_platform.__repr__()
+    @staticmethod
+    def hash(control_platform: list[list[PlatformObject]]) -> tuple[tuple[PlatformObject]]:
+        return tuple(tuple(row) for row in control_platform)
 
     @property
     def score(self) -> int:
@@ -78,36 +86,135 @@ class ControlPlatform:
                     score += len(self.control_platform) - i
         return score
 
-    def tilt(self) -> None:
-        no_movement = False
-        while no_movement != True:
-            no_movement = True
-            for i, row in enumerate(self.control_platform):
-                for j, element in enumerate(row):
-                    new_i = i - 1
-                    if element.moveable and new_i >= 0 and element.can_move(self.control_platform[new_i][j]):
-                        no_movement = False
-                        self.control_platform[new_i][j], self.control_platform[i][j] =  self.control_platform[i][j], self.control_platform[new_i][j]
+    def tilt(self, direction: Direction = Direction.NORTH) -> None:
 
+        match direction:
+            case Direction.NORTH:
+                self._tilt_north()
+            case Direction.SOUTH:
+                self._tilt_south()
+            case Direction.EAST:
+                self._tilt_east()
+            case Direction.WEST:
+                self._tilt_west()
+
+
+    def _tilt_north(self) -> None:
+        control_platform = self.control_platform
+        for i, row in enumerate(control_platform):
+            for j, element in enumerate(row):
+                new_i = i - 1
+                if element.moveable:
+                    while new_i >= 0 and element.can_move(control_platform[new_i][j]):
+                        new_i -= 1
+                new_i = new_i + 1
+                if element.can_move(control_platform[new_i][j]):
+                    control_platform[new_i][j] = control_platform[i][j]
+                    control_platform[i][j] = PlatformObject.EMPTY_SPACE
+
+    def _tilt_south(self) -> None:
+        control_platform = self.control_platform
+        for i, row in enumerate(control_platform[::-1]):
+            i = len(control_platform) - 1 - i
+            for j, element in enumerate(row):
+                new_i = i + 1
+                if element.moveable:
+                    while new_i < len(control_platform) and element.can_move(control_platform[new_i][j]):
+                        new_i += 1
+                new_i = new_i - 1
+                if element.can_move(control_platform[new_i][j]):
+                    control_platform[new_i][j] = control_platform[i][j]
+                    control_platform[i][j] = PlatformObject.EMPTY_SPACE
+
+    def _tilt_west(self) -> None:
+        control_platform = self.control_platform
+        for i, row in enumerate(control_platform):
+            for j, element in enumerate(row):
+                new_j = j - 1
+                if element.moveable:
+                    while new_j >= 0 and element.can_move(control_platform[i][new_j]):
+                        new_j -= 1
+                new_j = new_j + 1
+                if element.can_move(control_platform[i][new_j]):
+                    control_platform[i][new_j] = control_platform[i][j]
+                    control_platform[i][j] = PlatformObject.EMPTY_SPACE
+
+    def _tilt_east(self) -> None:
+        control_platform = self.control_platform
+        for i, row in enumerate(control_platform):
+            for j, element in enumerate(row[::-1]):
+                j = len(row) - 1 - j
+                new_j = j + 1
+                if element.moveable:
+                    while new_j < len(control_platform) and element.can_move(control_platform[i][new_j]):
+                        new_j += 1
+                new_j = new_j - 1
+                if element.can_move(control_platform[i][new_j]):
+                    control_platform[i][new_j] = control_platform[i][j]
+                    control_platform[i][j] = PlatformObject.EMPTY_SPACE
+
+
+    def _tilt(self, direction: Direction, element: PlatformObject, i: int, j:int) -> bool:
+        match direction:
+            case Direction.NORTH:
+                new_i = i - 1
+                if new_i >= 0 and element.can_move(self.control_platform[new_i][j]):
+                    self.control_platform[new_i][j], self.control_platform[i][j] =  self.control_platform[i][j], self.control_platform[new_i][j]
+                    return False
+            case Direction.SOUTH:
+                new_i = i + 1
+                if new_i < len(self.control_platform) and element.can_move(self.control_platform[new_i][j]):
+                    self.control_platform[new_i][j], self.control_platform[i][j] =  self.control_platform[i][j], self.control_platform[new_i][j]
+                    return False
+            case Direction.WEST:
+                new_j = j - 1
+                if new_j >= 0 and element.can_move(self.control_platform[i][new_j]):
+                    self.control_platform[i][new_j], self.control_platform[i][j] =  self.control_platform[i][j], self.control_platform[i][new_j]
+                    return False
+            case Direction.EAST:
+                new_j = j + 1
+                if new_j < len(self.control_platform[0]) and element.can_move(self.control_platform[j][new_j]):
+                    self.control_platform[i][new_j], self.control_platform[i][j] =  self.control_platform[i][j], self.control_platform[i][new_j]
+                    return False
+            case _:
+                raise RuntimeError(f"{direction} is not recognised.")
+        return True
+
+    def cycle(self, cycles:int=1000000000) -> None:
+        for _ in range(cycles):
+            cache_index = tuple[tuple[PlatformObject]](ControlPlatform.hash(self.control_platform))
+            if cache_index in self.cache:
+                self.control_platform = self.cache[cache_index]
+            else:
+                self.tilt(Direction.NORTH)
+                self.tilt(Direction.WEST)
+                self.tilt(Direction.SOUTH)
+                self.tilt(Direction.EAST)
+
+            self.cache[cache_index] = self.control_platform
 
 class Day14(DayBase):
     
     def __init__(self):
         super().__init__()
 
-        self.control_platform = ControlPlatform([[PlatformObject.from_str(c) for c in s] for s in self.input])
-
     def parse(self) -> list[str]:
         return self.input
 
     @override
     def part_1(self) -> int:
-        self.control_platform.tilt()
-        return self.control_platform.score
+        control_platform = ControlPlatform([[PlatformObject.from_str(c) for c in s] for s in self.input])
+        control_platform.tilt()
+        return control_platform.score
 
     @override
     def part_2(self) -> int:
-        pass
+        control_platform = ControlPlatform([[PlatformObject.from_str(c) for c in s] for s in self.input])
+        control_platform.cycle(1000000000)
+        # print(control_platform.cache)
+
+        return control_platform.score
+
 
 if __name__ == "__main__":
     day14 = Day14()
