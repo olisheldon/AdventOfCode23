@@ -2,8 +2,6 @@ from overrides import override
 
 from aoc23_base import DayBase
 from enum import Enum, auto
-import copy
-from dataclasses import dataclass
 
 class PlatformObject(Enum):
     ROUND_ROCK = auto(),
@@ -63,9 +61,9 @@ class Direction(Enum):
 
 class ControlPlatform:
 
-    def __init__(self, control_platform: list[list[PlatformObject]]):
-        self.control_platform: list[list[PlatformObject]] = control_platform
-        self.cache: dict[tuple[tuple[PlatformObject]], list[list[PlatformObject]]] = {}
+    def __init__(self, control_platform: tuple[tuple[PlatformObject]]):
+        self.control_platform: tuple[tuple[PlatformObject]] = control_platform
+        self.cache: dict[tuple[tuple[PlatformObject]], tuple[tuple[PlatformObject]]] = {}
 
     def __str__(self) -> str:
         return self.__repr__()
@@ -74,8 +72,8 @@ class ControlPlatform:
         return "\n".join("".join([PlatformObject.from_platform_object(element) for element in row]) for row in self.control_platform) + "\n" + '&' * len(self.control_platform[0])
     
     @staticmethod
-    def hash(control_platform: list[list[PlatformObject]]) -> tuple[tuple[PlatformObject]]:
-        return tuple(tuple(row) for row in control_platform)
+    def create_control_platform(control_platform: list[list[PlatformObject]]) -> 'ControlPlatform':
+        return ControlPlatform(tuple(tuple(row) for row in control_platform))
 
     @property
     def score(self) -> int:
@@ -100,7 +98,7 @@ class ControlPlatform:
 
 
     def _tilt_north(self) -> None:
-        control_platform = self.control_platform
+        control_platform = list(list(control_platform) for control_platform in self.control_platform)
         for i, row in enumerate(control_platform):
             for j, element in enumerate(row):
                 new_i = i - 1
@@ -111,9 +109,10 @@ class ControlPlatform:
                 if element.can_move(control_platform[new_i][j]):
                     control_platform[new_i][j] = control_platform[i][j]
                     control_platform[i][j] = PlatformObject.EMPTY_SPACE
+        self.control_platform = tuple(tuple(row) for row in control_platform)
 
     def _tilt_south(self) -> None:
-        control_platform = self.control_platform
+        control_platform = list(list(control_platform) for control_platform in self.control_platform)
         for i, row in enumerate(control_platform[::-1]):
             i = len(control_platform) - 1 - i
             for j, element in enumerate(row):
@@ -125,9 +124,10 @@ class ControlPlatform:
                 if element.can_move(control_platform[new_i][j]):
                     control_platform[new_i][j] = control_platform[i][j]
                     control_platform[i][j] = PlatformObject.EMPTY_SPACE
+        self.control_platform = tuple(tuple(row) for row in control_platform)
 
     def _tilt_west(self) -> None:
-        control_platform = self.control_platform
+        control_platform = list(list(control_platform) for control_platform in self.control_platform)
         for i, row in enumerate(control_platform):
             for j, element in enumerate(row):
                 new_j = j - 1
@@ -138,9 +138,10 @@ class ControlPlatform:
                 if element.can_move(control_platform[i][new_j]):
                     control_platform[i][new_j] = control_platform[i][j]
                     control_platform[i][j] = PlatformObject.EMPTY_SPACE
+        self.control_platform = tuple(tuple(row) for row in control_platform)
 
     def _tilt_east(self) -> None:
-        control_platform = self.control_platform
+        control_platform = list(list(control_platform) for control_platform in self.control_platform)
         for i, row in enumerate(control_platform):
             for j, element in enumerate(row[::-1]):
                 j = len(row) - 1 - j
@@ -152,37 +153,13 @@ class ControlPlatform:
                 if element.can_move(control_platform[i][new_j]):
                     control_platform[i][new_j] = control_platform[i][j]
                     control_platform[i][j] = PlatformObject.EMPTY_SPACE
+        self.control_platform = tuple(tuple(row) for row in control_platform)
 
-
-    def _tilt(self, direction: Direction, element: PlatformObject, i: int, j:int) -> bool:
-        match direction:
-            case Direction.NORTH:
-                new_i = i - 1
-                if new_i >= 0 and element.can_move(self.control_platform[new_i][j]):
-                    self.control_platform[new_i][j], self.control_platform[i][j] =  self.control_platform[i][j], self.control_platform[new_i][j]
-                    return False
-            case Direction.SOUTH:
-                new_i = i + 1
-                if new_i < len(self.control_platform) and element.can_move(self.control_platform[new_i][j]):
-                    self.control_platform[new_i][j], self.control_platform[i][j] =  self.control_platform[i][j], self.control_platform[new_i][j]
-                    return False
-            case Direction.WEST:
-                new_j = j - 1
-                if new_j >= 0 and element.can_move(self.control_platform[i][new_j]):
-                    self.control_platform[i][new_j], self.control_platform[i][j] =  self.control_platform[i][j], self.control_platform[i][new_j]
-                    return False
-            case Direction.EAST:
-                new_j = j + 1
-                if new_j < len(self.control_platform[0]) and element.can_move(self.control_platform[j][new_j]):
-                    self.control_platform[i][new_j], self.control_platform[i][j] =  self.control_platform[i][j], self.control_platform[i][new_j]
-                    return False
-            case _:
-                raise RuntimeError(f"{direction} is not recognised.")
-        return True
-
-    def cycle(self, cycles:int=1000000000) -> None:
+    def cycle(self, cycles:int=1000000000) -> int:
+        score = self.score
         for _ in range(cycles):
-            cache_index = tuple[tuple[PlatformObject]](ControlPlatform.hash(self.control_platform))
+            print(_)
+            cache_index = self.control_platform
             if cache_index in self.cache:
                 self.control_platform = self.cache[cache_index]
             else:
@@ -190,8 +167,14 @@ class ControlPlatform:
                 self.tilt(Direction.WEST)
                 self.tilt(Direction.SOUTH)
                 self.tilt(Direction.EAST)
+                self.cache[cache_index] = self.control_platform
+            
+            if score == self.score:
+                return score
+            score = self.score
+        return score
 
-            self.cache[cache_index] = self.control_platform
+
 
 class Day14(DayBase):
     
@@ -203,16 +186,14 @@ class Day14(DayBase):
 
     @override
     def part_1(self) -> int:
-        control_platform = ControlPlatform([[PlatformObject.from_str(c) for c in s] for s in self.input])
+        control_platform = ControlPlatform.create_control_platform([[PlatformObject.from_str(c) for c in s] for s in self.input])
         control_platform.tilt()
         return control_platform.score
 
     @override
     def part_2(self) -> int:
-        control_platform = ControlPlatform([[PlatformObject.from_str(c) for c in s] for s in self.input])
-        control_platform.cycle(1000000000)
-        # print(control_platform.cache)
-
+        control_platform = ControlPlatform.create_control_platform([[PlatformObject.from_str(c) for c in s] for s in self.input])
+        control_platform.cycle()
         return control_platform.score
 
 
