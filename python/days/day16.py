@@ -189,7 +189,6 @@ class Day16(DayBase):
 
     @override
     def part_2(self) -> int:
-        pass
         min_i, max_i = 0, len(self.input) - 1
         min_j, max_j = 0, len(self.input[0]) - 1
         lasers_going_north = [Laser(Coord(max_i, j), Direction.NORTH) for j in range(max_j + 1)]
