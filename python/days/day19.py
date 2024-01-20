@@ -9,6 +9,7 @@ from collections import defaultdict
 class PartRatingOutcome(StrEnum):
     A = auto(),
     R = auto(),
+    NOT_DETERMINED = auto(),
 
 class PartCategory(StrEnum):
     x = auto(),
@@ -65,6 +66,11 @@ class Comparison(StrEnum):
             case _:
                 raise RuntimeError(f"Comparison {comparison} is not recognised.")
 
+@dataclass
+class Range:
+    lower_bound: int
+    upper_bound: int
+
 class RuleComparison:
 
     def __init__(self, part_category: PartCategory, value: int, comparison: Comparison):
@@ -77,6 +83,18 @@ class RuleComparison:
     
     def __call__(self, part_ratings: PartRatings) -> bool:
         return Comparison.query(self.comparison, part_ratings.get_value(self.part_category), self.value)
+    
+    def get_valid_range(self) -> Range:
+        match self.comparison:
+            case Comparison.LESS_THAN:
+                return Range(PartRatings.min_value, self.value)
+            case Comparison.GREATER_THAN:
+                return Range(self.value, PartRatings.max_value)
+            case Comparison.GREATER_THAN:
+                return Range(PartRatings.min_value, PartRatings.max_value)
+            case _:
+                raise RuntimeError()
+            
 
 class Rule:
 
@@ -107,6 +125,46 @@ class Rule:
             if self._fail_rule:
                 return self._fail_rule(part_ratings)
             raise RuntimeError()
+    
+    def get_paths(self, paths: list[list['Rule']] | None = None, outcome_required: PartRatingOutcome = PartRatingOutcome.A) -> list[list['Rule']]:
+        if paths is None:
+            paths = [[self]]
+        else:
+            for path in paths:
+                path.append(self)
+
+        for path in paths:
+            if self._pass_rule:
+                path += self._pass_rule.get_paths(paths)
+            if self._fail_rule:
+                path += self._fail_rule.get_paths(paths)
+        
+        return paths
+
+
+
+    
+    # def get_paths(self, paths: defaultdict[PartRatingOutcome, list[list[RuleComparison]]] | None = None) -> defaultdict[PartRatingOutcome, list[list[RuleComparison]]]:
+    #     if paths is None:
+    #         paths: defaultdict[PartRatingOutcome, list[list[RuleComparison]]] = defaultdict(list)
+    #         paths[PartRatingOutcome.NOT_DETERMINED] = [[self._rule_comparison]]
+        
+    #     for paths_to_explore in paths[PartRatingOutcome.NOT_DETERMINED]:
+    #         if self._pass_rule:
+    #             new_paths = self._pass_rule.get_paths(paths)
+    #             for part_rating_outcome, rule_comparisons in new_paths.items():
+    #                 paths[part_rating_outcreturn (rule_comparisons) # not sure about thipathss
+    #         else:
+    #             paths[PartRatingOutcome[self._pass_outcome.upper()]].append(paths_to_explore)
+
+    #         if self._fail_rule:
+    #             new_paths = self._fail_rule.get_paths(paths)
+    #             for part_rating_outcome, rule_comparisons in new_paths.items():
+    #                 paths[part_rating_outcreturn (rule_comparisons) # not sure about thipathss
+    #         else:
+    #             paths[PartRatingOutcome[self._pass_outcome.upper()]].append(paths_to_explore)
+
+    #     return paths
 
 class Workflow:
 
@@ -119,6 +177,8 @@ class Workflow:
     
     def query(self, part_ratings: PartRatings) -> PartRatingOutcome:
         return self.rules[0](part_ratings)
+        
+
     
 
 class WorkflowContainer:
@@ -132,8 +192,10 @@ class WorkflowContainer:
     def query(self, part_ratings: PartRatings, workflow_name: str = "in") -> PartRatingOutcome:
         workflow = self._workflows[workflow_name]
         return workflow.query(part_ratings)
+    
+    def get_paths(self, workflow_name: str = "in") -> list[list[Rule]]:
+        return self._workflows[workflow_name].rules[0].get_paths()
 
-        
 
 class Day19(DayBase):
     
@@ -193,7 +255,15 @@ class Day19(DayBase):
 
     @override
     def part_2(self) -> int:
-        pass
+        all_paths = self.workflow_container.get_paths()
+        print(len(all_paths))
+        print(len(all_paths[0]))
+        all_paths_to_A: list[list[Rule]] = []
+        # for path in all_paths:
+        #     if path[-1]._pass_outcome.upper() == PartRatingOutcome.A:
+        #         all_paths_to_A.append(path)
+        
+
 
 
 if __name__ == "__main__":
