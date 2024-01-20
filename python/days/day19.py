@@ -4,6 +4,7 @@ from enum import Enum, StrEnum, auto
 from dataclasses import dataclass
 from typing import Any, Callable
 from itertools import pairwise
+from collections import defaultdict
 
 class Outcome(StrEnum):
     A = auto(),
@@ -16,6 +17,9 @@ class PartCategory(StrEnum):
     s = auto(),
 
 class PartRatings:
+
+    min_value: int = 0
+    max_value: int = 4000
 
     def __init__(self, part_str: str):
         x, m, a, s = part_str[1:-1].split(',')
@@ -62,25 +66,29 @@ class RuleComparison:
         self.part_category: PartCategory = part_category
         self.value: int = value
         self.comparison: Comparison = Comparison(comparison_str)
+
+    def __repr__(self) -> str:
+        return f"{self.part_category} {self.comparison} {self.value}"
     
     def __call__(self, part_ratings: PartRatings) -> bool:
         return Comparison.query(self.comparison, part_ratings.get_value(self.part_category), self.value)
 
-
 class Rule:
 
-    def __init__(self, part_category: PartCategory, rule: RuleComparison, outcome: 'str | Outcome'):
-        self._part_category: PartCategory = part_category
+    def __init__(self, rule: RuleComparison, outcome: 'str | Outcome'):
         self._rule: RuleComparison = rule
         self._outcome: 'str | Outcome' = outcome
         self._next_rule: 'Rule | None' = None
 
     def __repr__(self) -> str:
-        return f"Rule({self._part_category}, {self._rule}, {self._outcome}, ({self._next_rule.__repr__()}))"
+        return f"Rule({self._rule}, {self._outcome}, ({self._next_rule.__repr__()}))"
 
     def set_next(self, rule: 'Rule') -> 'Rule':
         self._next_rule = rule
         return rule
+
+    def get_next(self) -> 'Rule | None':
+        return self._next_rule
     
     def handle(self, part_ratings: PartRatings) -> Outcome | str | None:
         if self._rule(part_ratings):
@@ -89,12 +97,49 @@ class Rule:
             if self._next_rule:
                 return self._next_rule.handle(part_ratings)
         return None
+    
+    def get_paths(self) -> tuple[str | Outcome, 'None | Rule']:
+        return self._outcome, self._next_rule
+    
+    def get_values_in_range(self):
+        match self._rule.comparison:
+            case Comparison.LESS_THAN:
+                return PartRatings.min_value, self._rule.value
+            case Comparison.GREATER_THAN:
+                return self._rule.value, PartRatings.max_value
+            case _:
+                raise RuntimeError()
 
-@dataclass(frozen=True)
+
+
 class Workflow:
-    name: str
-    init_rule: Rule
-    end_outcome: Outcome | str
+
+    def __init__(self, name: str, init_rule: Rule, end_outcome: Outcome | str):
+        self.name: str = name
+        self.init_rule: Rule = init_rule
+        self.end_outcome: Outcome | str = end_outcome
+
+    def get_paths(self) -> dict[str | Outcome, list[Rule]]:
+        paths: dict[str | Outcome, list[Rule]] = defaultdict(list)
+        rules: list[Rule] = [self.init_rule]
+        rule = self.init_rule
+        while rule:
+            rule_paths: tuple[str | Outcome, 'None | Rule'] = rule.get_paths()
+            pass_outcome: str | Outcome = rule_paths[0]
+            fail_outcome: None | Rule = rule_paths[1]
+
+            paths[pass_outcome] = rules
+
+            if not fail_outcome:
+                paths[self.end_outcome] = rules
+            else:
+                rule = fail_outcome            
+                rules.append(rule)
+
+            rule = rule.get_next()
+        
+        return paths
+
 
 class WorkflowContainer:
 
@@ -116,7 +161,50 @@ class WorkflowContainer:
         elif isinstance(outcome, str):
             return self.query(part_ratings, outcome)
         
-        raise RuntimeError()
+        raise RuntimeError(f"outcome is not a string, {outcome}")
+    
+    def get_paths(self, workflow_name: str = "in") -> dict[str | Outcome, list[Rule]]:
+        paths: dict[str | Outcome, list[Rule]] = defaultdict(list)
+
+        workflow_paths: dict[str, dict[str | Outcome, list[Rule]]] = {}
+        for workflow_name, workflow in self._workflows.items():
+            workflow_paths[workflow_name] = workflow.get_paths()
+
+        for workflow_name, workflow in workflow_paths.items():
+            for outcome, rules in workflow.items():
+                paths[outcome] += rules
+        
+        return paths
+
+
+
+
+    
+    # def get_paths(self, workflow_name: str = "in") -> dict[Outcome, list[list[Rule]]]:
+    #     paths: dict[Outcome, list[list[Rule]]] = {outcome : [] for outcome in Outcome}
+
+    #     workflow_paths: dict[str, dict[str | Outcome, list[Rule]]] = {}
+    #     for workflow_name, workflow in self._workflows.items():
+    #         workflow_paths[workflow_name] = workflow.get_paths()
+
+    #     for workflow_name, workflow in workflow_paths.items():
+    #         rules_list = []
+    #         for outcome, rules in workflow.items():
+    #             rules_list += rules
+    #             while outcome not in Outcome._member_names_:
+    #                 workflow_path = workflow_paths[outcome]
+    #                 workflow = self._workflows[outcome]
+    #                 rules = workflow_path[outcome]
+    #                 rules_list += rules
+
+
+
+    #             paths[Outcome[outcome]].append(rules_list)
+        
+    #     return paths
+        
+
+
         
 
 class Day19(DayBase):
@@ -144,7 +232,7 @@ class Day19(DayBase):
                     raise RuntimeError(f"Parsing error, {rule_str} does not contain '<' or '>'")
                 if outcome in PartCategory._member_names_:
                     outcome = PartCategory(outcome)
-                rules.append(Rule(part_category, rule, outcome))
+                rules.append(Rule(rule, outcome))
             for rule, next_rule in pairwise(rules):
                 rule.set_next(next_rule)
             workflows.append(Workflow(name, rules[0], end_outcome[:-1]))
@@ -165,7 +253,27 @@ class Day19(DayBase):
 
     @override
     def part_2(self) -> int:
-        pass
+        workflows_list, part_ratings_list = self.parse()
+        workflow_container = WorkflowContainer({workflow.name : workflow for workflow in workflows_list})
+        paths = workflow_container.get_paths()
+        for path in paths.items():
+            print(path)
+
+        rule_comparisons: list[Rule] = []
+        path_outcome_acceptance = paths["A"]
+        for rule in path_outcome_acceptance:
+            rule_comparisons.append(rule)
+
+        range_values = {part_category : 0 for part_category in PartCategory}
+        
+
+        for rule in rule_comparisons:
+            range_values[rule._rule.part_category] = abs(rule.get_values_in_range()[0] - rule.get_values_in_range()[1])
+        
+        print(range_values)
+        from functools import reduce
+        return reduce(lambda x, y: x*y, range_values.values())
+
 
 if __name__ == "__main__":
     day19 = Day19()
