@@ -17,6 +17,7 @@ class PartCategory(StrEnum):
     a = auto(),
     s = auto(),
 
+
 class PartRatings:
 
     min_value: int = 0
@@ -67,9 +68,66 @@ class Comparison(StrEnum):
                 raise RuntimeError(f"Comparison {comparison} is not recognised.")
 
 @dataclass
-class Range:
-    lower_bound: int
-    upper_bound: int
+class PartCategoryRange:
+    part_category: PartCategory
+    lower_bound: int = 0
+    upper_bound: int = 4000
+
+    def merge(self, part_category_range: 'PartCategoryRange') -> None:
+        assert self.part_category == part_category_range.part_category
+
+        self.lower_bound = min(self.lower_bound, part_category_range.lower_bound)
+        self.upper_bound = max(self.upper_bound, part_category_range.upper_bound)
+
+
+
+class PartCategoriesRange:
+
+    def __init__(self):
+        self.x_part_category_range: PartCategoryRange = PartCategoryRange(PartCategory.x)
+        self.m_part_category_range: PartCategoryRange = PartCategoryRange(PartCategory.m)
+        self.a_part_category_range: PartCategoryRange = PartCategoryRange(PartCategory.a)
+        self.s_part_category_range: PartCategoryRange = PartCategoryRange(PartCategory.s)
+
+    @staticmethod
+    def merge(part_categories_ranges: list['PartCategoriesRange']) -> 'PartCategoriesRange':
+        part_categories_range = PartCategoriesRange()
+        for part_categories_range in part_categories_ranges:
+            part_categories_range.x_part_category_range.merge(part_categories_range.x_part_category_range)
+            part_categories_range.m_part_category_range.merge(part_categories_range.m_part_category_range)
+            part_categories_range.a_part_category_range.merge(part_categories_range.a_part_category_range)
+            part_categories_range.s_part_category_range.merge(part_categories_range.s_part_category_range)
+        return part_categories_range
+            
+    @staticmethod
+    def _merge_part_category_ranges(part_category_ranges: list[PartCategoryRange]) -> list[PartCategoryRange]:
+        part_category_ranges.sort(key=lambda part_category_range: part_category_range.lower_bound)
+        merged = [part_category_ranges[0]]
+        for current in part_category_ranges:
+            previous = merged[-1]
+            if current.lower_bound <= previous.upper_bound:
+                previous.upper_bound = max(previous.upper_bound, current.upper_bound)
+            else:
+                merged.append(current)
+        return merged
+    
+    @staticmethod
+    def merge_list(part_category_ranges: list[PartCategoryRange]) -> 'PartCategoriesRange':
+        part_categories_range = PartCategoriesRange()
+        for part_category_range in part_category_ranges:
+            match part_category_range.part_category:
+                case PartCategory.x:
+                    part_category_range.merge(part_categories_range.x_part_category_range)
+                case PartCategory.m:
+                    part_category_range.merge(part_categories_range.m_part_category_range)
+                case PartCategory.a:
+                    part_category_range.merge(part_categories_range.a_part_category_range)
+                case PartCategory.s:
+                    part_category_range.merge(part_categories_range.s_part_category_range)
+                case _:
+                    raise RuntimeError(f"part_category_range {part_category_range} is not recognised.")
+        return part_categories_range
+
 
 class RuleComparison:
 
@@ -84,17 +142,16 @@ class RuleComparison:
     def __call__(self, part_ratings: PartRatings) -> bool:
         return Comparison.query(self.comparison, part_ratings.get_value(self.part_category), self.value)
     
-    def get_valid_range(self) -> Range:
+    def get_valid_part_category_range(self) -> PartCategoryRange:
         match self.comparison:
             case Comparison.LESS_THAN:
-                return Range(PartRatings.min_value, self.value)
+                return PartCategoryRange(self.part_category, PartRatings.min_value, self.value)
             case Comparison.GREATER_THAN:
-                return Range(self.value, PartRatings.max_value)
-            case Comparison.GREATER_THAN:
-                return Range(PartRatings.min_value, PartRatings.max_value)
+                return PartCategoryRange(self.part_category, self.value, PartRatings.max_value)
+            case Comparison.NO_COMPARISON:
+                return PartCategoryRange(self.part_category, PartRatings.min_value, PartRatings.max_value)
             case _:
-                raise RuntimeError()
-            
+                raise RuntimeError(f"RuleComparison {self.comparison} is not recognised.")
 
 class Rule:
 
@@ -125,46 +182,35 @@ class Rule:
             if self._fail_rule:
                 return self._fail_rule(part_ratings)
             raise RuntimeError()
-    
-    def get_paths(self, paths: list[list['Rule']] | None = None, outcome_required: PartRatingOutcome = PartRatingOutcome.A) -> list[list['Rule']]:
-        if paths is None:
-            paths = [[self]]
-        else:
-            for path in paths:
-                path.append(self)
 
-        for path in paths:
-            if self._pass_rule:
-                path += self._pass_rule.get_paths(paths)
-            if self._fail_rule:
-                path += self._fail_rule.get_paths(paths)
-        
-        return paths
+    @classmethod
+    def _paths(cls, tree: 'Rule'):
+        root = tree
+        rooted_paths = [[root]]
+        unrooted_paths = []
+        for subtree in (tree._pass_rule, tree._fail_rule):
+            if subtree:
+                useable, unusable = Rule._paths(subtree)
+                for path in useable:
+                    unrooted_paths.append(path)
+                    rooted_paths.append([root] + path)
+                for path in unusable:
+                    unrooted_paths.append(path)
+        return (rooted_paths, unrooted_paths)
 
+    def get_paths(self):
+        a, b = Rule._paths(self)
+        return a + b
 
+    @classmethod
+    def find_paths(cls, root: 'Rule'):
+        if root._pass_rule is None and root._fail_rule is None:
+            yield [root]
 
-    
-    # def get_paths(self, paths: defaultdict[PartRatingOutcome, list[list[RuleComparison]]] | None = None) -> defaultdict[PartRatingOutcome, list[list[RuleComparison]]]:
-    #     if paths is None:
-    #         paths: defaultdict[PartRatingOutcome, list[list[RuleComparison]]] = defaultdict(list)
-    #         paths[PartRatingOutcome.NOT_DETERMINED] = [[self._rule_comparison]]
-        
-    #     for paths_to_explore in paths[PartRatingOutcome.NOT_DETERMINED]:
-    #         if self._pass_rule:
-    #             new_paths = self._pass_rule.get_paths(paths)
-    #             for part_rating_outcome, rule_comparisons in new_paths.items():
-    #                 paths[part_rating_outcreturn (rule_comparisons) # not sure about thipathss
-    #         else:
-    #             paths[PartRatingOutcome[self._pass_outcome.upper()]].append(paths_to_explore)
-
-    #         if self._fail_rule:
-    #             new_paths = self._fail_rule.get_paths(paths)
-    #             for part_rating_outcome, rule_comparisons in new_paths.items():
-    #                 paths[part_rating_outcreturn (rule_comparisons) # not sure about thipathss
-    #         else:
-    #             paths[PartRatingOutcome[self._pass_outcome.upper()]].append(paths_to_explore)
-
-    #     return paths
+        for child in (root._pass_rule, root._fail_rule):
+            if child:
+                for path in cls.find_paths(child):
+                    yield [root] + path
 
 class Workflow:
 
@@ -255,14 +301,36 @@ class Day19(DayBase):
 
     @override
     def part_2(self) -> int:
-        all_paths = self.workflow_container.get_paths()
-        print(len(all_paths))
-        print(len(all_paths[0]))
-        all_paths_to_A: list[list[Rule]] = []
-        # for path in all_paths:
-        #     if path[-1]._pass_outcome.upper() == PartRatingOutcome.A:
-        #         all_paths_to_A.append(path)
+        # all_paths = self.workflow_container.get_paths()
+        # # for path in all_paths:
+        # #     print(len(path))
+
+        paths = Rule.find_paths(self.workflow_container._workflows["in"].rules[0])
+        paths_to_A = filter(lambda x : x[-1]._pass_outcome == PartRatingOutcome.A, paths)
+        # print(list(paths_to_A))
         
+        # for path_to_A in paths_to_A:
+        #     map(lambda x : x._rule_comparison, path_to_A)
+        #     print(path_to_A)
+        
+        paths_part_category_ranges = []
+        for path_to_A in paths_to_A:
+            path_part_category_ranges = []
+            for path in path_to_A:
+                path_part_category_ranges.append(path._rule_comparison.get_valid_part_category_range())
+            paths_part_category_ranges.append(path_part_category_ranges)
+        
+        print(paths_part_category_ranges)
+        print(paths_part_category_ranges[0])
+
+        part_categories_ranges = [PartCategoriesRange.merge_list(paths_part_category_range) for paths_part_category_range in paths_part_category_ranges]
+        # part_categories_range = PartCategoriesRange.merge_list(paths_part_category_ranges)
+        
+        part_categories_range = PartCategoriesRange.merge(part_categories_ranges)
+
+        return part_categories_range.x_part_category_range
+
+
 
 
 
