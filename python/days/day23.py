@@ -2,7 +2,8 @@ from overrides import override
 from aoc23_base import DayBase
 from enum import Enum, auto
 from dataclasses import dataclass
-from collections import deque
+import sys
+sys.setrecursionlimit(2**15)
 
 @dataclass(frozen = True)
 class Coord:
@@ -117,29 +118,29 @@ class HikingMap:
     def __init__(self, hiking_map: list[list[PathTile]]):
         self.hiking_map: list[list[PathTile]] = hiking_map
 
-    def move(self, start: Coord = Coord(0, 1), end: Coord | None = None) -> int:
-        used_coords: set[Coord] = set()
-        used_coords.add(start)
-        queue: deque[tuple[Coord, Move, int]] = deque()
-        queue.append((start, Move.DOWN, 1))
+    def move(self, start: Coord = Coord(0, 1), end: Coord = Coord(22, 21)) -> int:
+        used_coords = set()
 
-        while queue:
-            coord, move, length = queue.popleft()
-            if not self.within_boundary(coord) or not PathTile.can_move(self.hiking_map[coord.i][coord.j], move):
-                continue
-
+        def dfs(coord: Coord):
             if coord == end:
-                return length
-            
+                return 0
+
+            m = -float("inf")
+
+            used_coords.add(coord)
             for move in Move.all_moves:
                 new_coord = coord + Move.move(move)
-                if new_coord not in used_coords:
-                    queue.append((new_coord, move, length + 1))
-                    used_coords.add(new_coord)
-                    
-        return -1
+                if self.within_boundary(new_coord) and PathTile.can_move(self.hiking_map[new_coord.i][new_coord.j], move) and new_coord not in used_coords:
+                    m = max(m, dfs(new_coord) + 1)
+            used_coords.remove(coord)
 
+            return m
+        
+        res = dfs(start)
 
+        if res < 0:
+            return -1
+        return int(res)
 
     def within_boundary(self, coord: Coord) -> bool:
         return 0 <= coord.i < len(self.hiking_map) \
@@ -164,7 +165,6 @@ class Day23(DayBase):
                       
     @override
     def part_1(self) -> int:
-        start = 0, 1
         return self.hiking_map.move()
 
     @override
