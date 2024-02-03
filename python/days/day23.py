@@ -2,6 +2,7 @@ from overrides import override
 from aoc23_base import DayBase
 from enum import Enum, auto
 from dataclasses import dataclass
+from collections import deque
 
 @dataclass(frozen = True)
 class Coord:
@@ -68,8 +69,8 @@ class PathTile(Enum):
         match path_tile:
             case cls.PATH:
                 return Move.all_moves
-            # case cls.FOREST:
-            #     return []
+            case cls.FOREST:
+                return []
             case cls.SLOPE_UP:
                 return [Move.UP]
             case cls.SLOPE_RIGHT:
@@ -118,33 +119,31 @@ class HikingMap:
 
     def move(self, start: Coord = Coord(0, 1), end: Coord | None = None) -> int:
         used_coords: set[Coord] = set()
-        if end is None:
-            end = Coord(len(self.hiking_map) - 1, len(self.hiking_map[0]) - 1)
-
-        self._move(start, end, used_coords)
-        return len(used_coords)
-        
-    def _move(self, start: Coord, end: Coord, used_coords: set[Coord]) -> set[Coord]:
-        tile = self.hiking_map[start.i][start.j]
-        possible_moves = PathTile.possible_moves(tile)
         used_coords.add(start)
-        
-        if start == end:
-            return used_coords
-        
+        queue: deque[tuple[Coord, Move, int]] = deque()
+        queue.append((start, Move.DOWN, 1))
 
-        if not possible_moves:
-            return set()
-        
-        new_moves: list[Move] = []
-        for possible_move in possible_moves:
-            new_coord = Move.move(possible_move) + start
-            new_tile = self.hiking_map[new_coord.i][new_coord.j]
-            if PathTile.can_move(new_tile, possible_move) and new_coord not in used_coords:
-                new_moves.append(possible_move)
+        while queue:
+            coord, move, length = queue.popleft()
+            if not self.within_boundary(coord) or not PathTile.can_move(self.hiking_map[coord.i][coord.j], move):
+                continue
 
-        for move in new_moves:
-            self._move(start + Move.move(move), end, used_coords)
+            if coord == end:
+                return length
+            
+            for move in Move.all_moves:
+                new_coord = coord + Move.move(move)
+                if new_coord not in used_coords:
+                    queue.append((new_coord, move, length + 1))
+                    used_coords.add(new_coord)
+                    
+        return -1
+
+
+
+    def within_boundary(self, coord: Coord) -> bool:
+        return 0 <= coord.i < len(self.hiking_map) \
+           and 0 <= coord.j < len(self.hiking_map[0])
 
 
 
