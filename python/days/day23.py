@@ -64,6 +64,24 @@ class PathTile(Enum):
                 return cls.SLOPE_LEFT
             case _:
                 raise RuntimeError(f"PathTile {c} is not recognised.")
+
+    @classmethod
+    def from_pathtile(cls, c: 'PathTile') -> str:
+        match c:
+            case cls.PATH:
+                return '.'
+            case cls.FOREST:
+                return '#'
+            case cls.SLOPE_UP:
+                return '^'
+            case cls.SLOPE_RIGHT:
+                return '>'
+            case cls.SLOPE_DOWN:
+                return 'v'
+            case cls.SLOPE_LEFT:
+                return '<'
+            case _:
+                raise RuntimeError(f"PathTile {c} is not recognised.")
     
     @classmethod
     def possible_moves(cls, path_tile: 'PathTile') -> list[Move]:
@@ -118,10 +136,17 @@ class HikingMap:
     def __init__(self, hiking_map: list[list[PathTile]]):
         self.hiking_map: list[list[PathTile]] = hiking_map
 
-    def move(self, start: Coord = Coord(0, 1), end: Coord = Coord(22, 21)) -> int:
-        used_coords = set()
+    def __repr__(self) -> str:
+        return "\n".join("".join([PathTile.from_pathtile(tile) for tile in row]) for row in self.hiking_map)
+    
+    def repr_with_used_coords(self, used_coords: set[Coord]) -> str:
+        return "\n".join("".join([PathTile.from_pathtile(tile) if Coord(i, j) not in used_coords else 'O' for (j, tile) in enumerate(row)]) for (i, row) in enumerate(self.hiking_map))
 
-        def dfs(coord: Coord):
+
+    def move(self, start: Coord = Coord(0, 1), end: Coord = Coord(22, 21)) -> int | float:
+        used_coords: set[Coord] = set()
+
+        def dfs(coord: Coord) -> int | float:
             if coord == end:
                 return 0
 
@@ -138,9 +163,7 @@ class HikingMap:
         
         res = dfs(start)
 
-        if res < 0:
-            return -1
-        return int(res)
+        return res
 
     def within_boundary(self, coord: Coord) -> bool:
         return 0 <= coord.i < len(self.hiking_map) \
@@ -165,7 +188,10 @@ class Day23(DayBase):
                       
     @override
     def part_1(self) -> int:
-        return self.hiking_map.move()
+        coords_longest_path = self.hiking_map.move()
+        print(self.hiking_map)
+        print(coords_longest_path)
+        # print(self.hiking_map.repr_with_used_coords(coords_longest_path))
 
     @override
     def part_2(self) -> int:
