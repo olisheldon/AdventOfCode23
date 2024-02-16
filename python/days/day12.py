@@ -3,9 +3,9 @@ from aoc23_base import DayBase
 from enum import Enum, auto
 
 class SpringType(Enum):
-    OPERATIONAL = auto(),
-    DAMAGED = auto(),
-    UNKNOWN = auto(),
+    OPERATIONAL = auto()
+    DAMAGED = auto()
+    UNKNOWN = auto()
 
     def __repr__(self) -> str:
         return SpringType.from_spring(self)

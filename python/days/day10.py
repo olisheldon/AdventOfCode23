@@ -12,17 +12,17 @@ class Coord:
         return Coord(self.i + other.i, self.j + other.j)
     
 class Segment(Enum):
-    INSIDE = auto(),
-    OUTSIDE = auto(),
-    NEITHER = auto(),
+    INSIDE = auto()
+    OUTSIDE = auto()
+    NEITHER = auto()
 
 class Move(Enum):
-    NORTH = auto(), 
-    EAST = auto(), 
-    SOUTH = auto(), 
-    WEST = auto(),
+    NORTH = auto() 
+    EAST = auto() 
+    SOUTH = auto() 
+    WEST = auto()
 
-    INVALID = auto(), 
+    INVALID = auto() 
 
     @classmethod
     def move_to_coord_offset(cls, move: 'Move') -> Coord:
@@ -39,14 +39,14 @@ class Move(Enum):
                 return Coord(0, 0)
 
 class TileType(Enum):
-    VERTICAL = auto(), 
-    HORIZONTAL = auto(), 
-    BENDNE = auto(), 
-    BENDNW = auto(), 
-    BENDSW = auto(), 
-    BENDSE = auto(), 
-    GROUND = auto(), 
-    START = auto(), 
+    VERTICAL = auto() 
+    HORIZONTAL = auto() 
+    BENDNE = auto() 
+    BENDNW = auto() 
+    BENDSW = auto() 
+    BENDSE = auto() 
+    GROUND = auto() 
+    START = auto() 
 
 
     @classmethod

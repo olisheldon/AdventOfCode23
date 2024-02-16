@@ -21,9 +21,9 @@ class PulseType(Flag):
             return pulse_type
 
 class ModuleType(Enum):
-    FLIPFLOP = auto(),
-    CONJUNCTION = auto(),
-    BROADCASTER = auto(),
+    FLIPFLOP = auto()
+    CONJUNCTION = auto()
+    BROADCASTER = auto()
 
     @classmethod
     def from_str(cls, c: str) -> 'ModuleType':

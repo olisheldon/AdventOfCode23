@@ -7,15 +7,15 @@ from itertools import pairwise
 from collections import defaultdict
 
 class PartRatingOutcome(StrEnum):
-    A = auto(),
-    R = auto(),
-    NOT_DETERMINED = auto(),
+    A = auto()
+    R = auto()
+    NOT_DETERMINED = auto()
 
 class PartCategory(StrEnum):
-    x = auto(),
-    m = auto(),
-    a = auto(),
-    s = auto(),
+    x = auto()
+    m = auto()
+    a = auto()
+    s = auto()
 
 
 class PartRatings:

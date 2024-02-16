@@ -73,48 +73,48 @@ class CardHelperMixin:
         raise RuntimeError(f"Card string {c} not recognised.")
 
 class Card(CardHelperMixin, IntEnum):
-    TWO = auto(),
-    THREE = auto(),
-    FOUR = auto(),
-    FIVE = auto(),
-    SIX = auto(),
-    SEVEN = auto(),
-    EIGHT = auto(),
-    NINE = auto(),
-    TEN = auto(),
-    JACK = auto(),
-    QUEEN = auto(),
-    KING = auto(),
-    ACE = auto(),
+    TWO = auto()
+    THREE = auto()
+    FOUR = auto()
+    FIVE = auto()
+    SIX = auto()
+    SEVEN = auto()
+    EIGHT = auto()
+    NINE = auto()
+    TEN = auto()
+    JACK = auto()
+    QUEEN = auto()
+    KING = auto()
+    ACE = auto()
 
 class CardWithJoker(CardHelperMixin, IntEnum):
-    JACK = auto(),
-    TWO = auto(),
-    THREE = auto(),
-    FOUR = auto(),
-    FIVE = auto(),
-    SIX = auto(),
-    SEVEN = auto(),
-    EIGHT = auto(),
-    NINE = auto(),
-    TEN = auto(),
-    QUEEN = auto(),
-    KING = auto(),
-    ACE = auto(),
+    JACK = auto()
+    TWO = auto()
+    THREE = auto()
+    FOUR = auto()
+    FIVE = auto()
+    SIX = auto()
+    SEVEN = auto()
+    EIGHT = auto()
+    NINE = auto()
+    TEN = auto()
+    QUEEN = auto()
+    KING = auto()
+    ACE = auto()
 
 class HandType(IntEnum):
-    HIGH_CARD = auto(),
-    ONE_PAIR = auto(),
-    TWO_PAIR = auto(),
-    THREE_OF_A_KIND = auto(),
-    FULL_HOUSE = auto(),
-    FOUR_OF_A_KIND = auto(),
-    FIVE_OF_A_KIND = auto(),
+    HIGH_CARD = auto()
+    ONE_PAIR = auto()
+    TWO_PAIR = auto()
+    THREE_OF_A_KIND = auto()
+    FULL_HOUSE = auto()
+    FOUR_OF_A_KIND = auto()
+    FIVE_OF_A_KIND = auto()
 
 class SecondaryCheck(IntEnum):
-    LOSE = auto(),
-    DRAW = auto(),
-    WIN = auto(),
+    LOSE = auto()
+    DRAW = auto()
+    WIN = auto()
 
 class Hand:
 

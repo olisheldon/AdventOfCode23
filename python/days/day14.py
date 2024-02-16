@@ -4,9 +4,9 @@ from aoc23_base import DayBase
 from enum import Enum, auto
 
 class PlatformObject(Enum):
-    ROUND_ROCK = auto(),
-    CUBE_ROCK = auto(),
-    EMPTY_SPACE = auto(),
+    ROUND_ROCK = auto()
+    CUBE_ROCK = auto()
+    EMPTY_SPACE = auto()
 
     @classmethod
     def from_str(cls, c: str) -> 'PlatformObject':
@@ -54,10 +54,10 @@ class PlatformObject(Enum):
         return self is self.ROUND_ROCK
 
 class Direction(Enum):
-    NORTH = auto(),
-    WEST = auto(),
-    SOUTH = auto(),
-    EAST = auto(),
+    NORTH = auto()
+    WEST = auto()
+    SOUTH = auto()
+    EAST = auto()
 
 class ControlPlatform:
 

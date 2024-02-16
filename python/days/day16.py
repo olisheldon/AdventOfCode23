@@ -13,10 +13,10 @@ class Coord:
 
 
 class Direction(Enum):
-    NORTH = auto(),
-    EAST = auto(),
-    SOUTH = auto(),
-    WEST = auto(),
+    NORTH = auto()
+    EAST = auto()
+    SOUTH = auto()
+    WEST = auto()
 
     @classmethod
     def move(cls, direction: 'Direction') -> Coord:
@@ -33,9 +33,9 @@ class Direction(Enum):
                 raise RuntimeError(f"Direction {direction} is not recognised.")
 
 class MirrorQueryResponse(Enum):
-    SPLIT_LASERS = auto(),
-    NEW_POSITION = auto(),
-    NO_ACTION = auto(),
+    SPLIT_LASERS = auto()
+    NEW_POSITION = auto()
+    NO_ACTION = auto()
     
     @classmethod
     def query(cls, mirror_tyle: 'MirrorTyle') -> 'MirrorQueryResponse':
@@ -59,11 +59,11 @@ class Laser:
         return Laser(self.coord + coord_offset, self.direction)
 
 class MirrorTyle(Enum):
-    EMPTY_SPACE = auto(),
-    FORWARD_MIRROR = auto(),
-    BACKWARD_MIRROR = auto(),
-    VERTICAL_SPLITTER = auto(),
-    HORIZONTAL_SPLITTER = auto(),
+    EMPTY_SPACE = auto()
+    FORWARD_MIRROR = auto()
+    BACKWARD_MIRROR = auto()
+    VERTICAL_SPLITTER = auto()
+    HORIZONTAL_SPLITTER = auto()
 
     @classmethod
     def from_str(cls, c: str) -> 'MirrorTyle':
@@ -144,8 +144,8 @@ class MirrorTyle(Enum):
         return directions
 
 class MirrorElementState(Enum):
-    ENERGIZED = auto(),
-    NOT_ENERGIZED = auto(),
+    ENERGIZED = auto()
+    NOT_ENERGIZED = auto()
 
 class Mirror:
 

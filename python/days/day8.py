@@ -6,7 +6,7 @@ from functools import reduce
 import math
 
 class MoveInstruction(StrEnum):
-    L = auto(),
+    L = auto()
     R = auto()
 
 class Node:

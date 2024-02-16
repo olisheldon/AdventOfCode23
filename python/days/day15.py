@@ -5,8 +5,8 @@ from enum import Enum, auto
 
 
 class Operation(Enum):
-    EQUALS = auto(),
-    MINUS = auto(),
+    EQUALS = auto()
+    MINUS = auto()
 
     @classmethod
     def from_str(cls, c: str) -> 'Operation':

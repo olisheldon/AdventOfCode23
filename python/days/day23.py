@@ -14,10 +14,10 @@ class Coord:
         return Coord(self.i + other.i, self.j + other.j)
 
 class Move(Enum):
-    UP = auto(),
-    RIGHT = auto(),
-    DOWN = auto(),
-    LEFT = auto(),
+    UP = auto()
+    RIGHT = auto()
+    DOWN = auto()
+    LEFT = auto()
 
     @classmethod
     def move(cls, move: 'Move') -> Coord:
@@ -40,12 +40,12 @@ class Move(Enum):
 
             
 class PathTile(Enum):
-    PATH = auto(),
-    FOREST = auto(),
-    SLOPE_UP = auto(),
-    SLOPE_RIGHT = auto(),
-    SLOPE_DOWN = auto(),
-    SLOPE_LEFT = auto(),
+    PATH = auto()
+    FOREST = auto()
+    SLOPE_UP = auto()
+    SLOPE_RIGHT = auto()
+    SLOPE_DOWN = auto()
+    SLOPE_LEFT = auto()
 
     @classmethod
     def from_str(cls, c: str) -> 'PathTile':

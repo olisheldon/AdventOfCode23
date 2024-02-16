@@ -4,8 +4,8 @@ from enum import Enum, StrEnum, auto
 from dataclasses import dataclass
 
 class GroundType(Enum):
-    TRENCH = auto(),
-    GROUND = auto(),
+    TRENCH = auto()
+    GROUND = auto()
 
 @dataclass(frozen=True)
 class Coord:
@@ -16,10 +16,10 @@ class Coord:
         return Coord(self.i + other.i, self.j + other.j)
 
 class Direction(StrEnum):
-    U = auto(),
-    R = auto(),
-    D = auto(),
-    L = auto(),
+    U = auto()
+    R = auto()
+    D = auto()
+    L = auto()
 
     @classmethod
     def move(cls, direction: 'Direction') -> Coord:
@@ -42,8 +42,8 @@ class Instruction:
     colour: str
 
 class FillingState(Enum):
-    INSIDE = auto(),
-    OUTSIDE = auto(),
+    INSIDE = auto()
+    OUTSIDE = auto()
 
 class Frame:
 

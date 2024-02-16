@@ -5,9 +5,9 @@ from itertools import combinations
 from dataclasses import dataclass
 
 class Pixel(Enum):
-    GALAXY = auto(),
-    SPACE = auto(),
-    INVALID = auto(),
+    GALAXY = auto()
+    SPACE = auto()
+    INVALID = auto()
 
     @classmethod
     def from_str(cls, c: str):

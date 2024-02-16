@@ -5,8 +5,8 @@ from functools import reduce
 from aoc23_base import DayBase
 
 class Dice(StrEnum):
-    RED = auto(),
-    GREEN = auto(),
+    RED = auto()
+    GREEN = auto()
     BLUE = auto()
 
 
