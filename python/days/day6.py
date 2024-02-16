@@ -50,4 +50,10 @@ class Day6(DayBase):
     @override
     def part_2(self) -> int:
         return self.one_race.number_of_ways_to_beat
+        return result
+    
+if __name__ == "__main__":
+    day6 = Day6()
+    print(day6.part_1())
+    print(day6.part_2())
         

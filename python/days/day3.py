@@ -1,5 +1,7 @@
 import string
 from functools import reduce
+from overrides import override
+from aoc23_base import DayBase
 
 class Number:
     
@@ -28,19 +30,14 @@ class Symbol:
     def is_gear(self) -> bool:
         return self.symbol == '*'
 
-class Day3:
+class Day3(DayBase):
 
     def __init__(self):
-        self.input: list[str] = Day3.get_input()
+        super().__init__()
         self.numbers, self.symbols = self.parse()
 
-    @staticmethod
-    def get_input() -> list[str]:
-        with open("input.txt", 'r') as f:
-            lines = f.read().splitlines()
-        return lines
-    
-    def part1(self) -> int:
+    @override
+    def part_1(self) -> int:
         i = 0
         for number in self.numbers:
             for symbol in self.symbols:
@@ -49,7 +46,8 @@ class Day3:
                     break
         return i
     
-    def part2(self) -> int:
+    @override
+    def part_2(self) -> int:
         result = 0
         for symbol in self.symbols:
             if symbol.is_gear:
@@ -86,5 +84,5 @@ class Day3:
     
 if __name__ == "__main__":
     day3 = Day3()
-    print(day3.part1())
-    print(day3.part2())
+    print(day3.part_1())
+    print(day3.part_2())

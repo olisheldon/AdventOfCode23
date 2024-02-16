@@ -50,3 +50,8 @@ class Day4(DayBase):
             numbers, winning_numbers = numbers.split()[2:], winning_numbers.split()
             scratchcards.append(Scratchcard([int(num) for num in numbers], [int(winning_num) for winning_num in winning_numbers]))
         return scratchcards
+    
+if __name__ == "__main__":
+    day4 = Day4()
+    print(day4.part_1())
+    print(day4.part_2())

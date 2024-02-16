@@ -1,6 +1,8 @@
 from enum import StrEnum, auto
 from collections import UserDict
+from overrides import override
 from functools import reduce
+from aoc23_base import DayBase
 
 class Dice(StrEnum):
     RED = auto(),
@@ -54,18 +56,11 @@ class Game:
                 return False
         return True
 
-class Day2:
+class Day2(DayBase):
 
     def __init__(self):
-        self.input: list[str] = Day2.get_input()
+        super().__init__()
         self.games: list[Game] = self.parse()
-        
-
-    @staticmethod
-    def get_input() -> list[str]:
-        with open("input.txt", 'r') as f:
-            lines = f.read().splitlines()
-        return lines
     
     def parse(self) -> list[Game]:
         games = []
@@ -83,10 +78,12 @@ class Day2:
             games.append(game)
         return games
     
-    def part1(self) -> int:
+    @override
+    def part_1(self) -> int:
         return sum(game.id for game in self.games if game.valid())
     
-    def part2(self) -> int:
+    @override
+    def part_2(self) -> int:
         max_dice_required_per_game = (game.max_dice_set.values() for game in self.games)
         power = 0
         for max_dice_nums in max_dice_required_per_game:
@@ -98,5 +95,5 @@ class Day2:
             
 if __name__ == "__main__":
     day2 = Day2()
-    print(day2.part1())
-    print(day2.part2())
+    print(day2.part_1())
+    print(day2.part_2())

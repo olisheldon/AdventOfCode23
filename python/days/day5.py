@@ -1,6 +1,5 @@
 from overrides import override
 from aoc23_base import DayBase
-import itertools
 
 class Mapping:
     def __init__(self, source_range_start: int, destination_range_start: int, range_length: int):
@@ -100,11 +99,11 @@ class Day5(DayBase):
     
     @override
     def part_1(self) -> int:
-        return 0
-        # return min((self.maps.query(seed) for seed in self.seeds))
+        return min((self.maps.query(seed) for seed in self.seeds))
 
     @override
     def part_2(self) -> int:
+        pass
         # result = int(1e100)
         # for seed_range in self.seed_ranges:
         #     for seed in seed_range.range:
@@ -119,5 +118,11 @@ class Day5(DayBase):
         # print(seed_ranges_merged)
         # print(seeds_requiring_mapping)
 
-        print(Maps._merge_intervals([(4,5), (1,4)]))
+        # print(Maps._merge_intervals([(4,5), (1,4)]))
+    
+if __name__ == "__main__":
+    day5 = Day5()
+    print(day5.part_1())
+    print(day5.part_2())
+
         
