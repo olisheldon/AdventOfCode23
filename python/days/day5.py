@@ -1,69 +1,102 @@
 from overrides import override
 from aoc23_base import DayBase
+from itertools import pairwise
+
+class SeedInterval:
+
+    def __init__(self, seed: int, length_range: int):
+        self.lower: int = seed
+        self.upper: int = seed + length_range - 1
+
+    def update_offset(self, offset: int) -> None:
+        self.lower += offset
+        self.upper += offset
+    
+    def within(self, i: int) -> bool:
+        return self.lower <= i < self.upper
+    
+    def intersection(self, other: 'SeedInterval') -> 'list[SeedInterval]':
+        if not self.intersects(other):
+            return []
+        
+        if self.lower <= other.lower:
+            return [SeedInterval(self.lower, other.lower - 1), 
+                    SeedInterval(other.lower, self.upper),
+                    SeedInterval(other.upper + 1, other.upper),
+                   ]
+        return [SeedInterval(self.lower, other.upper)]
+    
+    def intersects(self, other: 'SeedInterval') -> bool:
+        lower, upper = max(self.lower, other.lower), max(self.upper, other.upper)
+        return upper <= lower
+
+    @staticmethod
+    def merge_intervals(seed_intervals: list['SeedInterval']) -> list['SeedInterval']:
+        # Do I want this to have side effects? Probs not
+
+        seed_intervals.sort(key=lambda interval: interval.lower)
+        merged = [seed_intervals[0]]
+        for current in seed_intervals:
+            previous = merged[-1]
+            if current.lower <= previous.upper:
+                previous.upper = max(previous.upper, current.lower)
+            else:
+                merged.append(current)
+        return merged
 
 class Mapping:
-    def __init__(self, source_range_start: int, destination_range_start: int, range_length: int):
-        self.source_range_start: int = source_range_start
-        self.destination_range_start: int = destination_range_start
-        self.range_length: int = range_length
 
-        self.source_range_end: int = source_range_start + range_length
-        self.offset: int = destination_range_start - source_range_start
+    def __init__(self, seed_interval: SeedInterval, offset: int):
+        self.seed_interval = seed_interval
+        self.offset = offset
+
+    def query_intervals(self, seed_intervals: list[SeedInterval]) -> list[SeedInterval]:
+        seed_intervals = self._query_intervals(seed_intervals)
+        seed_intervals = SeedInterval.merge_intervals(seed_intervals)
+        return seed_intervals
     
-    @property
-    def range(self):
-        return range(self.source_range_start, self.source_range_start + self.range_length)
-    
-    @property
-    def bounds(self) -> tuple[int, int]:
-        return (self.source_range_start, self.source_range_start + self.range_length)
+    def _query_intervals(self, seed_intervals: list[SeedInterval]) -> list[SeedInterval]:
+        new_seed_intervals = []
+        for seed_interval in seed_intervals:
+            new_seed_intervals += self.seed_interval.intersection(seed_interval)
 
 class Map:
     
     def __init__(self):
         self.mappings: list[Mapping] = []
 
-    def query(self, i: int) -> int:
+    def query_intervals(self, seed_intervals: list[SeedInterval]) -> list[SeedInterval]:
         for mapping in self.mappings:
-            if mapping.source_range_start < i < mapping.source_range_end:
-                return i + mapping.offset
-        # return i
-        raise RuntimeError("Should not be called if not going to do any work because it is unnecessary!!")
+            seed_intervals = mapping.query_intervals(seed_intervals)
+            seed_intervals = SeedInterval.merge_intervals(seed_intervals)
+        return seed_intervals
 
     def parse(self, destination_range_start: int, source_range_start: int, range_length: int):
-        self.mappings.append(Mapping(source_range_start, destination_range_start, range_length))
+        if source_range_start > destination_range_start:
+            source_range_start, destination_range_start = destination_range_start, source_range_start
+            range_length = -range_length
+        self.mappings.append(Mapping(SeedInterval(source_range_start, destination_range_start), range_length))
 
 class Maps(list):
 
     def __init__(self, pipeline: list[Map]):
         self.pipeline: list[Map] = pipeline
-        self.seed_ranges_requiring_work: list[tuple[int,int]] = self._create_seed_ranges_requiring_work(pipeline)
 
-    @staticmethod
-    def _merge_intervals(intervals: list[tuple[int, int]]) -> list[tuple[int, int]]:
-        list_intervals = [[interval[0], interval[1]] for interval in intervals]
+    def query_seed(self, seed: int) -> int:
+        
+        unit_length_intervals = self.query_intervals([SeedInterval(seed, seed)])
+        assert len(unit_length_intervals) == 1
+        
+        unit_length_interval = unit_length_intervals[0]
+        assert unit_length_interval.lower == unit_length_interval.upper
 
-        list_intervals.sort(key=lambda interval: interval[0])
-        merged = [list_intervals[0]]
-        for current in list_intervals:
-            previous = merged[-1]
-            if current[0] <= previous[1]:
-                previous[1] = max(previous[1], current[1])
-            else:
-                merged.append(current)
-        return [(merge[0], merge[1]) for merge in merged]
+        return unit_length_interval.lower
 
-    def _create_seed_ranges_requiring_work(self, pipeline: list[Map]) -> list[tuple[int,int]]:
-        ranges = []
-        for pipe in pipeline:
-            for mapping in pipe.mappings:
-                ranges.append(mapping.bounds)
-        return self._merge_intervals(ranges)
-
-    def query(self, seed: int) -> int:
+    def query_intervals(self, seed_intervals: list[SeedInterval]) -> list[SeedInterval]:
         for map in self.pipeline:
-            seed = map.query(seed)
-        return seed
+            seed_intervals = map.query_intervals(seed_intervals)
+            seed_intervals = SeedInterval.merge_intervals(seed_intervals)
+        return seed_intervals
 
 
 class Day5(DayBase):
@@ -72,14 +105,8 @@ class Day5(DayBase):
         super().__init__()
         seeds, maps = self.parse()
         self.seeds: list[int] = seeds
+        self.seed_intervals: list[SeedInterval] = [SeedInterval(x, y) for x, y in pairwise(seeds)]
         self.maps: Maps = maps
-
-        # Part 2
-        self.seed_ranges: list[tuple[int, int]] = []
-        i = 0
-        while i < len(seeds):
-            self.seed_ranges.append((seeds[i], seeds[i + 1]))
-            i += 2
 
     def parse(self) -> tuple[list[int], Maps]:
         pipeline: list[Map] = []
@@ -99,26 +126,14 @@ class Day5(DayBase):
     
     @override
     def part_1(self) -> int:
-        return min((self.maps.query(seed) for seed in self.seeds))
+        pass
+        # return min((self.maps.query_seed(seed) for seed in self.seeds))
 
     @override
     def part_2(self) -> int:
-        pass
-        # result = int(1e100)
-        # for seed_range in self.seed_ranges:
-        #     for seed in seed_range.range:
-        #         result = min(result, self.maps.query(seed))
-        # return result
-
-        # seed_ranges_merged = Maps._merge_intervals(self.seed_ranges)
-        # map_ranges_requiring_work = self.maps.seed_ranges_requiring_work
-
-        # seeds_requiring_mapping = Maps._merge_intervals(list(itertools.chain(seed_ranges_merged, map_ranges_requiring_work)))
-
-        # print(seed_ranges_merged)
-        # print(seeds_requiring_mapping)
-
-        # print(Maps._merge_intervals([(4,5), (1,4)]))
+        a = SeedInterval(0, 10)
+        b = SeedInterval(8, 12)
+        return a.intersects(b)
     
 if __name__ == "__main__":
     day5 = Day5()
