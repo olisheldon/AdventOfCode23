@@ -18,7 +18,7 @@ class MultipleScratchcards(list):
 
     def __init__(self, scratchcards: list[Scratchcard]):
         super(MultipleScratchcards, self).__init__(scratchcards)
-        self.number_of_scratchcards: list[int] = [1 for i in range(len(scratchcards))]
+        self.number_of_scratchcards: list[int] = [1 for _ in range(len(scratchcards))]
 
 class Day4(DayBase):
     
@@ -34,12 +34,11 @@ class Day4(DayBase):
     def part_2(self) -> int:
         i = 0
         while i < len(self.multiple_scratchcards):
-            for _ in range(self.multiple_scratchcards.number_of_scratchcards[i]):
-                for j in range(1, self.multiple_scratchcards[i].number_of_winners + 1):
-                    if i + j < len(self.multiple_scratchcards):
-                        self.multiple_scratchcards.number_of_scratchcards[i + j] += 1
-                    else:
-                        break
+            for j in range(1, self.multiple_scratchcards[i].number_of_winners + 1):
+                if i + j < len(self.multiple_scratchcards):
+                    self.multiple_scratchcards.number_of_scratchcards[i + j] += self.multiple_scratchcards.number_of_scratchcards[i]
+                else:
+                    break
             i += 1
         return sum(self.multiple_scratchcards.number_of_scratchcards)
     
