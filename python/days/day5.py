@@ -32,13 +32,13 @@ class SeedInterval:
     def within(self, i: int) -> bool:
         return self.lower <= i < self.upper
     
-    def intersection(self, other: 'SeedInterval') -> 'list[SeedInterval]':
-        if not self.intersects(other):
-            return []
+    # def intersection(self, other: 'SeedInterval') -> 'list[SeedInterval]':
+    #     if not self.intersects(other):
+    #         return []
         
-        if self.lower <= other.lower:
-            return [SeedInterval(other.lower, self.upper)]
-        return [SeedInterval(self.lower, other.upper)]
+    #     if self.lower <= other.lower:
+    #         return [SeedInterval(other.lower, self.upper)]
+    #     return [SeedInterval(self.lower, other.upper)]
     
     def intersect_and_apply_offset(self, other: 'SeedInterval', offset: int) -> 'list[SeedInterval]':
         a, b = self, other
@@ -49,17 +49,19 @@ class SeedInterval:
         intersections = self.interval_intersection([self], [other])
         
         if intersections:
-
-            lower, upper = min(self.lower, other.lower), max(self.upper, other.upper)
-
-            if lower <= intersections[0].lower - 1:
-                intersections.append(SeedInterval(lower, intersections[0].lower - 1))
-            if intersections[0].upper + 1 <= upper:
-                intersections.append(SeedInterval(intersections[0].upper + 1, upper))
+            
+            if intersections[0].lower > other.lower:
+                intersections.append(SeedInterval(other.lower, intersections[0].lower - 1))
+            
+            if intersections[0].upper < other.upper:
+                intersections.append(SeedInterval(intersections[0].upper + 1, other.upper))
 
 
         
         intersections[0].apply_offset(offset)
+
+        if len(intersections) > 1:
+            print(1)
 
         return intersections
     
@@ -132,10 +134,11 @@ class Map:
         return f"{self.mappings}"
 
     def query_intervals(self, seed_intervals: list[SeedInterval]) -> list[SeedInterval]:
+        new_seed_intervals = []
         for mapping in self.mappings:
-            seed_intervals = mapping.query_intervals(seed_intervals)
-            seed_intervals = SeedInterval.merge_intervals(seed_intervals)
-        return seed_intervals
+            new_seed_intervals += mapping.query_intervals(seed_intervals)
+            new_seed_intervals = SeedInterval.merge_intervals(new_seed_intervals)
+        return new_seed_intervals
 
     def parse(self, destination_range_start: int, source_range_start: int, range_length: int):
         assert range_length >= 0
@@ -161,10 +164,11 @@ class Maps:
         return unit_length_interval.lower
 
     def query_intervals(self, seed_intervals: list[SeedInterval]) -> list[SeedInterval]:
+        new_seed_intervals = []
         for pipeline in self.pipeline:
-            seed_intervals = pipeline.query_intervals(seed_intervals)
-            seed_intervals = SeedInterval.merge_intervals(seed_intervals)
-        return seed_intervals
+            new_seed_intervals += pipeline.query_intervals(seed_intervals)
+            new_seed_intervals = SeedInterval.merge_intervals(new_seed_intervals)
+        return new_seed_intervals
 
 
 class Day5(DayBase):
@@ -199,15 +203,13 @@ class Day5(DayBase):
     
     @override
     def part_1(self) -> int:
-        return self.maps.query_intervals([SeedInterval(79, 79)])
+        return [self.maps.query_intervals([SeedInterval(seed, seed)]) for seed in [self.seeds[0]]]
 
     @override
     def part_2(self) -> int:
-        print(self.seed_intervals)
         # seed_intervals = self.maps.query_intervals(self.seed_intervals)
-        seed_intervals = self.maps.query_intervals([SeedInterval(79, 79)])
+        seed_intervals = self.maps.query_intervals([SeedInterval(a, b) for a, b in [(79, 79), (14, 14), (55, 55), (13, 13)]])
         # return seed_intervals
-        return seed_intervals
         return min(seed_interval.lower for seed_interval in  seed_intervals)
 
 if __name__ == "__main__":
@@ -216,4 +218,4 @@ if __name__ == "__main__":
     # day5.maps.pipeline = [day5.maps.pipeline[0]]
 
     print(day5.part_1())
-    # print(day5.part_2())
+    print(day5.part_2())
