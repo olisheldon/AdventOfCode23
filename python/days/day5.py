@@ -22,6 +22,9 @@ class SeedInterval:
             raise RuntimeError()
         
         return self.lower == __value.lower and self.upper == __value.upper
+    
+    def copy(self) -> 'SeedInterval':
+        return SeedInterval(self.lower, self.upper)
 
     def apply_offset(self, offset: int) -> None:
         self.lower += offset
@@ -114,37 +117,56 @@ class Map:
 
     def query_mappings(self, seed_intervals: list[SeedInterval]) -> list[SeedInterval]:
 
+        print()
+        print(self.name)
+        print(seed_intervals)
         new_seed_intervals = self._query_mappings(seed_intervals)
-        # print(new_seed_intervals)
         new_seed_intervals = SeedInterval.merge_intervals(new_seed_intervals)
+        print("after merge", new_seed_intervals)
 
         return new_seed_intervals
     
     def _query_mappings(self, seed_intervals: list[SeedInterval]) -> list[SeedInterval]:
 
-        temp_seed_intervals: list[SeedInterval] = seed_intervals.copy()
-        hit_list: list[SeedInterval] = []
-        miss_list: list[SeedInterval] = []
+        print(1, seed_intervals)
 
-        while temp_seed_intervals:
-            print(temp_seed_intervals)
-            seed_interval = temp_seed_intervals.pop()
-            for mapping, offset in zip(self.mappings, self.mappings_offset):
-                hits_and_misses = mapping.intersection_and_outersection(seed_interval)
-                print(hits_and_misses)
-                hits = hits_and_misses[0]
-                misses = hits_and_misses[1]
+        hits_with_offsets: list[SeedInterval] = []
+        hits_without_offsets: list[SeedInterval] = []
+        misses: list[SeedInterval] = []
+        
+        for mapping, offset in zip(self.mappings, self.mappings_offset):
+            for seed_interval in seed_intervals:
+
+                hits, misses = mapping.intersection_and_outersection(seed_interval)
+                print(2, seed_interval, mapping, hits, misses)
+
                 if hits:
-                    temp_seed_intervals += misses
-                    hit_list += hits
+                    hit = hits[0]
+                    print(5, hits)
+                    hits_without_offsets.append(hit.copy())
+                    hit.apply_offset(offset)
+                    hits_with_offsets.append(hit.copy())
+                    print(5, hits)
+                    print(4, hits_with_offsets, hits_without_offsets)
+                    # misses += misses
+
                 else:
-                    miss_list += misses
-
-        for miss in miss_list:
-            for hit in hit_list:
+                    misses.append(seed_interval)
                 
+        print(3, hits_with_offsets, hits_without_offsets, misses)
 
-        return hit_list + SeedInterval.merge_intervals(miss_list)
+        outersections = []
+
+        if not hits_without_offsets:
+            outersections = misses
+
+        for miss in misses:
+            for hit_without_offset in hits_without_offsets:
+                _, outersection = hit_without_offset.intersection_and_outersection(miss)
+                outersections += outersection
+        
+        return hits_with_offsets + outersections
+
 
     def parse(self, destination_range_start: int, source_range_start: int, range_length: int):
         assert range_length >= 0
@@ -209,21 +231,16 @@ class Day5(DayBase):
     
     @override
     def part_1(self) -> int:
-        return [self.maps.query_intervals([SeedInterval(seed, seed)]) for seed in self.seeds]
+        seed_intervals = self.maps.query_intervals([SeedInterval(seed, seed) for seed in self.seeds])
+        return min(seed_interval.lower for seed_interval in  seed_intervals)
 
     @override
     def part_2(self) -> int:
-        # seed_intervals = self.maps.query_intervals(self.seed_intervals)
-        seed_intervals = self.maps.query_intervals([SeedInterval(a, b) for a, b in [(79, 79), (14, 14), (55, 55), (13, 13)]])
-        # return seed_intervals
+        seed_intervals = self.maps.query_intervals(self.seed_intervals)
         return min(seed_interval.lower for seed_interval in  seed_intervals)
 
 if __name__ == "__main__":
     day5 = Day5()
 
-    # day5.maps.pipeline = [day5.maps.pipeline[0]]
-
-    # print(day5.part_1())
-    # print(day5.part_2())
-
-    print(day5.maps.query_intervals([SeedInterval(14, 14)]))
+    print(day5.part_1())
+    print(day5.part_2())
