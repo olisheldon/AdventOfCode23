@@ -36,11 +36,11 @@ class Node:
 class NodesBase:
 
     def __init__(self, nodes: list[tuple[str, str, str]], move_instructions: list[MoveInstruction]):
-        self.node_instances = [(Node(node[0]), node[1], node[2]) for node in nodes]
-        node_dict = {node[0].node_name : node[0] for node in self.node_instances}
+        self.node_instances: list[tuple[Node, str, str]] = [(Node(node[0]), node[1], node[2]) for node in nodes]
+        node_dict: dict[str, Node] = {node[0].node_name : node[0] for node in self.node_instances}
         self.nodes: dict[str, Node] = self._add_nodes(node_dict)
         self.move_instructions = move_instructions
-        self.cycle: cycle = cycle(move_instructions)
+        self.cycle: cycle[MoveInstruction] = cycle(move_instructions)
 
     def _add_nodes(self, node_dict: dict[str, Node]) -> dict[str, Node]:
         nodes: dict[str, Node] = {}
@@ -85,20 +85,22 @@ class SimultaneousNodes(NodesBase):
                     
         prime_factors = []
         for num_of_moves in first_hit_per_node:
-            prime_factors += self._primeFactors(num_of_moves)
+            prime_factors += SimultaneousNodes._prime_factors(num_of_moves)
         return reduce(lambda x, y : x * y, set(prime_factors))
     
-    def _primeFactors(self, n):
-        res = []
+    @staticmethod
+    def _prime_factors(n: int) -> list[int]:
+        factors: list[int] = []
         while n % 2 == 0:
             n = n // 2
-        for i in range(3, int(math.sqrt(n))+1, 2):
+
+        for i in range(3, int(math.sqrt(n)) + 1, 2):
             while n % i == 0:
-                res.append(i)
+                factors.append(i)
                 n = n // i
         if n > 2:
-            res.append(n)
-        return res
+            factors.append(n)
+        return factors
     
 class Day8(DayBase):
     
