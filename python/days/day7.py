@@ -135,20 +135,22 @@ class CardWithJoker(CardHelperMixin, IntEnum):
     @override
     def assign_hand_type(cls, cards: tuple['CardWithJoker', 'CardWithJoker', 'CardWithJoker', 'CardWithJoker', 'CardWithJoker']) -> 'HandType':
         cards_without_jack = [card for card in CardWithJoker if card != CardWithJoker.JACK]
-        list_of_possible_cards = [[]]
 
-        for card in cards:
-            if card != CardWithJoker.JACK:
-                for possible_cards in list_of_possible_cards:
-                    possible_cards.append(card)
-            else:
-                list_of_possible_cards = [possible_cards.copy() for _ in range(len(cards_without_jack)) for possible_cards in list_of_possible_cards]
-                cycle_cards = cycle(cards_without_jack)
-                for possible_cards in list_of_possible_cards:
-                    possible_cards.append(next(cycle_cards))
-
+        def possibilities(cards: tuple['CardWithJoker', 'CardWithJoker', 'CardWithJoker', 'CardWithJoker', 'CardWithJoker']) -> list[list[CardWithJoker]]:
+            list_of_possible_cards = [[]]
+            for card in cards:
+                if card != CardWithJoker.JACK:
+                    for possible_cards in list_of_possible_cards:
+                        possible_cards.append(card)
+                else:
+                    list_of_possible_cards = [possible_cards.copy() for _ in range(len(cards_without_jack)) for possible_cards in list_of_possible_cards]
+                    cycle_cards = cycle(cards_without_jack)
+                    for possible_cards in list_of_possible_cards:
+                        possible_cards.append(next(cycle_cards))
+            return list_of_possible_cards
+        
         best_hand: HandType = HandType.HIGH_CARD
-        for possible_card in list_of_possible_cards:
+        for possible_card in possibilities(cards):
             unique_cards = set(possible_card)
             counter = Counter(possible_card)
             match len(unique_cards):
