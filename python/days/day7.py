@@ -1,17 +1,23 @@
 from overrides import override
 from aoc23_base import DayBase
-from enum import auto, IntEnum
+from enum import auto, IntEnum, EnumMeta
 from collections import Counter
 from itertools import cycle
 from typing import Callable, Type
+
+from dataclasses import dataclass, field
 
 class CardHelperMixin:
 
     def __repr__(self) -> str:
         return self.card_to_char(self)
-
+    
     @classmethod
-    def char_to_card(cls, c: str):
+    def assign_hand_type(cls, cards: tuple['Card', 'Card', 'Card', 'Card', 'Card']) -> 'HandType':
+        raise RuntimeError("This should only be called by subclasses.")
+    
+    @classmethod
+    def char_to_card(cls, c: str) -> 'Card':
         match c:
             case "A":
                 return cls.ACE
@@ -39,10 +45,10 @@ class CardHelperMixin:
                 return cls.THREE
             case "2":
                 return cls.TWO
-        raise RuntimeError(f"Card string {c} not recognised.")
+        raise RuntimeError(f"Card {card} not recognised.")
 
     @classmethod
-    def card_to_char(cls, card):
+    def card_to_char(cls, card: 'Card') -> str:
         match card:
             case cls.ACE:
                 return "A"
@@ -70,7 +76,7 @@ class CardHelperMixin:
                 return "3"
             case cls.TWO:
                 return "2"
-        raise RuntimeError(f"Card string {c} not recognised.")
+        raise RuntimeError(f"Card {card} not recognised.")
 
 class Card(CardHelperMixin, IntEnum):
     TWO = auto()
@@ -87,6 +93,29 @@ class Card(CardHelperMixin, IntEnum):
     KING = auto()
     ACE = auto()
 
+    @classmethod
+    @override
+    def assign_hand_type(cls, cards: tuple['Card', 'Card', 'Card', 'Card', 'Card']) -> 'HandType':
+        unique_cards = set(cards)
+        counter = Counter(cards)
+        match len(unique_cards):
+            case 1:
+                return HandType.FIVE_OF_A_KIND
+            case 2:
+                if max(counter.values()) == 4:
+                    return HandType.FOUR_OF_A_KIND
+                return HandType.FULL_HOUSE
+            case 3:
+                if max(counter.values()) == 3:
+                    return HandType.THREE_OF_A_KIND
+                return HandType.TWO_PAIR
+            case 4:
+                return HandType.ONE_PAIR
+            case 5:
+                return HandType.HIGH_CARD
+            case _:
+                raise RuntimeError(f"Cards {cards} cannot be assigned a hand type.")
+
 class CardWithJoker(CardHelperMixin, IntEnum):
     JACK = auto()
     TWO = auto()
@@ -101,6 +130,47 @@ class CardWithJoker(CardHelperMixin, IntEnum):
     QUEEN = auto()
     KING = auto()
     ACE = auto()
+
+    @classmethod
+    @override
+    def assign_hand_type(cls, cards: tuple['CardWithJoker', 'CardWithJoker', 'CardWithJoker', 'CardWithJoker', 'CardWithJoker']) -> 'HandType':
+        cards_without_jack = [card for card in CardWithJoker if card != CardWithJoker.JACK]
+        list_of_possible_cards = [[]]
+
+        for card in cards:
+            if card != CardWithJoker.JACK:
+                for possible_cards in list_of_possible_cards:
+                    possible_cards.append(card)
+            else:
+                list_of_possible_cards = [possible_cards.copy() for _ in range(len(cards_without_jack)) for possible_cards in list_of_possible_cards]
+                cycle_cards = cycle(cards_without_jack)
+                for possible_cards in list_of_possible_cards:
+                    possible_cards.append(next(cycle_cards))
+
+        best_hand: HandType = HandType.HIGH_CARD
+        for possible_card in list_of_possible_cards:
+            unique_cards = set(possible_card)
+            counter = Counter(possible_card)
+            match len(unique_cards):
+                case 1:
+                    best_hand = max(best_hand, HandType.FIVE_OF_A_KIND)
+                case 2:
+                    if max(counter.values()) == 4:
+                        best_hand = max(best_hand, HandType.FOUR_OF_A_KIND)
+                    else:
+                        best_hand = max(best_hand, HandType.FULL_HOUSE)
+                case 3:
+                    if max(counter.values()) == 3:
+                        best_hand = max(best_hand, HandType.THREE_OF_A_KIND)
+                    else:
+                        best_hand = max(best_hand, HandType.TWO_PAIR)
+                case 4:
+                    best_hand = max(best_hand, HandType.ONE_PAIR)
+                case 5:
+                    best_hand = max(best_hand, HandType.HIGH_CARD)
+                case _:
+                    raise RuntimeError(f"did not recognise card {len(unique_cards)}")
+        return best_hand
 
 class HandType(IntEnum):
     HIGH_CARD = auto()
@@ -118,12 +188,12 @@ class SecondaryCheck(IntEnum):
 
 class Hand:
 
-    def __init__(self, cards: tuple[Card, Card, Card, Card, Card], primary_ranking):
+    def __init__(self, cards: tuple[Card, Card, Card, Card, Card]):
         self.cards: tuple[Card, Card, Card, Card, Card] = cards
-        self.primary_ranking: HandType = primary_ranking(self.cards)
+        self.hand_type: HandType = cards[0].assign_hand_type(self.cards)
 
     def __repr__(self) -> str:
-        return f"{''.join([card.card_to_char(card.value) for card in self.cards])} {self.primary_ranking.name}"
+        return f"Hand(cards={self.cards} hand_type={self.hand_type.name})"
 
     def secondary_comparison(self, hand: 'Hand') -> SecondaryCheck:
         for my_card, other_card in zip(self.cards, hand.cards):
@@ -136,7 +206,7 @@ class Hand:
         return SecondaryCheck.DRAW
     
     def __lt__(self, other: 'Hand') -> bool:
-        if self.primary_ranking == other.primary_ranking:
+        if self.hand_type == other.hand_type:
             match self.secondary_comparison(other):
                 case SecondaryCheck.WIN:
                     return False
@@ -144,10 +214,10 @@ class Hand:
                     return False
                 case SecondaryCheck.LOSE:
                     return True
-        return self.primary_ranking < other.primary_ranking
+        return self.hand_type < other.hand_type
         
     def __le__(self, other: 'Hand') -> bool:
-        if self.primary_ranking == other.primary_ranking:
+        if self.hand_type == other.hand_type:
             match self.secondary_comparison(other):
                 case SecondaryCheck.WIN:
                     return False
@@ -155,7 +225,7 @@ class Hand:
                     return True
                 case SecondaryCheck.LOSE:
                     return True
-        return self.primary_ranking < other.primary_ranking
+        return self.hand_type < other.hand_type
 
     def __eq__(self, other: 'Hand') -> bool:
         return self.cards == other.cards
@@ -169,31 +239,31 @@ class Hand:
     def __ge__(self, other: 'Hand') -> bool:
         return not self.__le__(other)
 
-class Player:
+class HandOfCards:
     
-    def __init__(self, cards: tuple[Card, Card, Card, Card, Card], bid: int, primary_ranking):
-        self.hand = Hand(cards, primary_ranking)
+    def __init__(self, cards: tuple[Card, Card, Card, Card, Card], bid: int):
+        self.hand = Hand(cards)
         self.bid: int = bid
     
     def __repr__(self) -> str:
         return f"{self.hand} {self.bid}"
     
-    def __lt__(self, other: 'Player') -> bool:
+    def __lt__(self, other: 'HandOfCards') -> bool:
         return self.hand.__lt__(other.hand)
 
-    def __le__(self, other: 'Player') -> bool:
+    def __le__(self, other: 'HandOfCards') -> bool:
         return self.hand.__le__(other.hand)
 
-    def __eq__(self, other: 'Player') -> bool:
+    def __eq__(self, other: 'HandOfCards') -> bool:
         return self.hand.__eq__(other.hand)
 
-    def __ne__(self, other: 'Player') -> bool:
+    def __ne__(self, other: 'HandOfCards') -> bool:
         return self.hand.__ne__(other.hand)
 
-    def __gt__(self, other: 'Player') -> bool:
+    def __gt__(self, other: 'HandOfCards') -> bool:
         return self.hand.__gt__(other.hand)
         
-    def __ge__(self, other: 'Player') -> bool:
+    def __ge__(self, other: 'HandOfCards') -> bool:
         return self.hand.__ge__(other.hand)
 
 
@@ -206,14 +276,12 @@ class Day7(DayBase):
         self.bids: list[int] = []
         self.list_of_cards, self.bids = self.parse()
 
-        # self.players: list[Player] = [] # can only be created once we know the properties of the deck
-
-    def create_players(self, list_of_cards: list[str], bids: list[int], CardEnum: Type[CardHelperMixin], primary_ranking: Callable) -> list[Player]:
-        players = []
+    def create_hands_of_cards(self, list_of_cards: list[str], bids: list[int], CardEnum: Type[CardHelperMixin]) -> list[HandOfCards]:
+        hand_of_cards = []
         for cards, bid in zip(list_of_cards, bids):
             enum_cards = tuple(CardEnum.char_to_card(c) for c in cards)
-            players.append(Player(enum_cards, bid, primary_ranking))
-        return players
+            hand_of_cards.append(HandOfCards(enum_cards, bid))
+        return hand_of_cards
 
     def parse(self) -> tuple[list[str], list[int]]:
         list_of_cards: list[str] = []
@@ -227,85 +295,17 @@ class Day7(DayBase):
     @override
     def part_1(self) -> int:
 
-        def primary_ranking(cards: tuple[Card, Card, Card, Card, Card]) -> 'HandType':
-            unique_cards = set(cards)
-            counter = Counter(cards)
-            match len(unique_cards):
-                case 1:
-                    return HandType.FIVE_OF_A_KIND
-                case 2:
-                    if max(counter.values()) == 4:
-                        return HandType.FOUR_OF_A_KIND
-                    else:
-                        return HandType.FULL_HOUSE
-                case 3:
-                    if max(counter.values()) == 3:
-                        return HandType.THREE_OF_A_KIND
-                    else:
-                        return HandType.TWO_PAIR
-                case 4:
-                    return HandType.ONE_PAIR
-                case 5:
-                    return HandType.HIGH_CARD
-            raise RuntimeError("did not recognise card")
+        hands_of_cards = self.create_hands_of_cards(self.list_of_cards, self.bids, Card)
 
-        players = self.create_players(self.list_of_cards, self.bids, Card, primary_ranking)
-
-        result = 0
-        for i, player in enumerate(sorted(players)):
-            result += (i + 1) * player.bid
-        return result
+        return sum((i + 1) * hand_of_cards.bid for (i, hand_of_cards) in enumerate(sorted(hands_of_cards)))
 
 
     @override
     def part_2(self) -> int:
-
-        def primary_ranking(cards: tuple[CardWithJoker, CardWithJoker, CardWithJoker, CardWithJoker, CardWithJoker]) -> 'HandType':
-            cards_without_jack = [card for card in CardWithJoker if card != CardWithJoker.JACK]
-            list_of_possible_cards = [[]]
-
-            for card in cards:
-                if card != CardWithJoker.JACK:
-                    for possible_cards in list_of_possible_cards:
-                        possible_cards.append(card)
-                else:
-                    list_of_possible_cards = [possible_cards.copy() for _ in range(len(cards_without_jack)) for possible_cards in list_of_possible_cards]
-                    cycle_cards = cycle(cards_without_jack)
-                    for possible_cards in list_of_possible_cards:
-                        possible_cards.append(next(cycle_cards))
-
-            best_hand: HandType = HandType.HIGH_CARD
-            for possible_card in list_of_possible_cards:
-                unique_cards = set(possible_card)
-                counter = Counter(possible_card)
-                match len(unique_cards):
-                    case 1:
-                        best_hand = max(best_hand, HandType.FIVE_OF_A_KIND)
-                    case 2:
-                        if max(counter.values()) == 4:
-                            best_hand = max(best_hand, HandType.FOUR_OF_A_KIND)
-                        else:
-                            best_hand = max(best_hand, HandType.FULL_HOUSE)
-                    case 3:
-                        if max(counter.values()) == 3:
-                            best_hand = max(best_hand, HandType.THREE_OF_A_KIND)
-                        else:
-                            best_hand = max(best_hand, HandType.TWO_PAIR)
-                    case 4:
-                        best_hand = max(best_hand, HandType.ONE_PAIR)
-                    case 5:
-                        best_hand = max(best_hand, HandType.HIGH_CARD)
-                    case _:
-                        raise RuntimeError(f"did not recognise card {len(unique_cards)}")
-            return best_hand
-
             
-        players = self.create_players(self.list_of_cards, self.bids, CardWithJoker, primary_ranking)
-
-        result = 0
-        for i, player in enumerate(sorted(players)):
-            result += (i + 1) * player.bid
-        return result
+        hands_of_cards = self.create_hands_of_cards(self.list_of_cards, self.bids, CardWithJoker)
+        
+        return sum((i + 1) * hand_of_cards.bid for (i, hand_of_cards) in enumerate(sorted(hands_of_cards)))
     
 if __name__ == "__main__":
     day7 = Day7()
