@@ -15,7 +15,7 @@ class RacePossibilities:
     @property
     def possible_distances(self):
         distances = []
-        for time_holding_button in range(1, self.time + 1):
+        for time_holding_button in range(self.time + 1):
             time_moving = self.time - time_holding_button
             speed = time_holding_button
             distance = speed * time_moving
@@ -29,10 +29,7 @@ class Day6(DayBase):
         times, distances = self.parse()
         self.individual_races: list[RacePossibilities] = [RacePossibilities(time, distance) for time, distance in zip(times, distances)]
         
-        time, distance = "", ""
-        for t, d in zip(times, distances):
-            time += str(t)
-            distance += str(d)
+        time, distance = "".join(map(str, times)), "".join(map(str, distances))
         self.one_race: RacePossibilities = RacePossibilities(int(time), int(distance))
 
     def parse(self) -> tuple[list[int], list[int]]:
@@ -43,14 +40,12 @@ class Day6(DayBase):
     @override
     def part_1(self) -> int:
         possible_ways_per_race = [race.number_of_ways_to_beat for race in self.individual_races]
-        result = 0
-        result += reduce((lambda x, y: x * y), possible_ways_per_race)
+        result = reduce((lambda x, y: x * y), possible_ways_per_race)
         return result
 
     @override
     def part_2(self) -> int:
         return self.one_race.number_of_ways_to_beat
-        return result
     
 if __name__ == "__main__":
     day6 = Day6()
