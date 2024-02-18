@@ -1,11 +1,9 @@
 from overrides import override
 from aoc23_base import DayBase
-from enum import auto, IntEnum, EnumMeta
+from enum import auto, IntEnum
 from collections import Counter
 from itertools import cycle
-from typing import Callable, Type
-
-from dataclasses import dataclass, field
+from typing import Type
 
 class CardHelperMixin:
 
