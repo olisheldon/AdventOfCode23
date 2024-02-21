@@ -1,60 +1,35 @@
 from overrides import override
 from aoc23_base import DayBase
 
-class History:
 
-    def __init__(self, values_str: list[str]):
-        values: list[int] = [int(value) for value in values_str]
-        self.differences: list[list[int]] = History._generate_differences(values)
-
-    def __repr__(self) -> str:
-        repr = ""
-        for difference in self.differences:
-            repr += f"\n{len(difference)} {difference.__repr__()}"
-        return repr
-
-    @staticmethod
-    def _generate_differences(init_values: list[int]) -> list[list[int]]:
-
-        differences: list[list[int]] = [init_values]
-        while any(differences[-1]):
-            new_difference = []
-            for i in range(len(differences[-1]) - 1):
-                new_difference.append(differences[-1][i + 1] - differences[-1][i])
-            differences.append(new_difference)
-        return differences
-
-    def predict_next_value(self):
-        self.differences[-1].append(0)
-        for i in range(len(self.differences) - 2, -1, -1):
-            self.differences[i].append(self.differences[i][-1] + self.differences[i - 1][-1])
-        self.differences[0][-1] = self.differences[0][-2] + self.differences[1][-1]
-
-    def get_sum_of_final_values(self) -> int:
-        return sum(difference[-1] for difference in self.differences)
+def extrapolate(subhistory: list[int], forwards: bool = True) -> int:
+    if all(val == 0 for val in subhistory):
+        return 0
+    
+    deltas: list[int] = [y - x for x, y in zip(subhistory, subhistory[1:])]
+    diff: int = extrapolate(deltas, forwards)
+    
+    if not forwards:
+        return subhistory[0] - diff
+    return subhistory[-1] + diff
 
 
 class Day9(DayBase):
     
     def __init__(self):
         super().__init__()
-        self.histories: list[list[str]] = self.parse()
+        self.histories: list[list[int]] = [list(map(int, x)) for x in self.parse()]
 
     def parse(self) -> list[list[str]]:
         return [line.split() for line in self.input]
     
     @override
     def part_1(self) -> int:
-        histories = [History(history) for history in self.histories]
-
-        return sum(history.get_sum_of_final_values() for history in histories)
+        return sum(extrapolate(history) for history in self.histories)
 
     @override
     def part_2(self) -> int:
-        reversed_histories = [history[::-1] for history in self.histories]
-        histories = [History(history) for history in reversed_histories]
-
-        return sum(history.get_sum_of_final_values() for history in histories)
+        return sum(extrapolate(history, forwards = False) for history in self.histories)
 
 if __name__ == "__main__":
     day9 = Day9()
