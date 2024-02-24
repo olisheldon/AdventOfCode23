@@ -222,11 +222,6 @@ class Maze:
         height: int = len(self.tiles)
         width: int = len(self.tiles[0])
 
-        class Direction(Enum):
-            NS = auto()
-            WE = auto()
-            NEITHER = auto()
-        
         for i in range(height):
             inside: bool = False
             prev_bend: TileType = TileType.GROUND
@@ -280,6 +275,7 @@ class Day10(DayBase):
         counts = maze.count_segments(Segment.INSIDE)
 
         print(maze.show_segment(Segment.INSIDE))
+        print(maze.tiles[maze.start.i][maze.start.j].tile_type)
         return counts
 
 
