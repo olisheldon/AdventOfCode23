@@ -1,7 +1,6 @@
 from overrides import override
 from aoc23_base import DayBase
 from enum import Enum, auto
-from itertools import combinations
 from dataclasses import dataclass
 
 class Pixel(Enum):
@@ -24,45 +23,11 @@ class Coord:
     i: int
     j: int
 
-    def get_path(self, other: 'Coord') -> list['Coord']:
-        path_vertical = self.get_path_vertical(other)
-        # print(path_vertical)
-        path_horizontal = self.get_path_horizontal(other)
-        return list(set(path_vertical + path_horizontal))
-    
-    def get_path_vertical(self, other: 'Coord') -> list['Coord']:
-        if self.is_north(other):
-            return [Coord(self.i + di, self.j) for di in range(0, other.i - self.i + 1, 1)]
-        elif self.is_south(other):
-            return [Coord(self.i + di, self.j) for di in range(0, other.i - self.i - 1, -1)]
-        else:
-            return [self]
-    
-    def get_path_horizontal(self, other: 'Coord') -> list['Coord']:
-        if self.is_west(other):
-            return [Coord(self.i, self.j + dj) for dj in range(0, other.j - self.j + 1, 1)]
-        elif self.is_east(other):
-            return [Coord(self.i, self.j + dj) for dj in range(0, other.j - self.j - 1, -1)]
-        else:
-            return [self]
-    
-    def is_west(self, other: 'Coord') -> bool:
-        return self.j < other.j
-    
-    def is_east(self, other: 'Coord') -> bool:
-        return self.j > other.j
-    
-    def is_north(self, other: 'Coord') -> bool:
-        return self.i < other.i
-    
-    def is_south(self, other: 'Coord') -> bool:
-        return self.i > other.i
-
 class Image:
 
     def __init__(self, image_str: list[str]):
         self.image: list[list[Pixel]] = Image.create_image(image_str)
-        self.galaxies: set[Coord] = Image.extract_galaxies(self.image)
+        self.galaxies: list[Coord] = Image.extract_galaxies(self.image)
         empty_columns, empty_rows = self.find_expanded_columns_and_rows(self.image)
         self.empty_columns: set[int] = empty_columns
         self.empty_rows: set[int] = empty_rows
@@ -72,38 +37,33 @@ class Image:
         image: list[list[Pixel]] = [[Pixel.INVALID] * len(image_str) for _ in range(len(image_str[0]))]
         for i, row in enumerate(image_str):
             for j, elem in enumerate(row):
-                image[j][i] = Pixel.from_str(elem)
+                image[i][j] = Pixel.from_str(elem)
         return image
     
     @staticmethod
-    def extract_galaxies(image: list[list[Pixel]]) -> set[Coord]:
-        return set(Coord(i, j) for (j, row) in enumerate(image) for (i, pixel) in enumerate(row) if pixel is Pixel.GALAXY)
+    def extract_galaxies(image: list[list[Pixel]]) -> list[Coord]:
+        return list(Coord(i, j) for (i, row) in enumerate(image) for (j, pixel) in enumerate(row) if pixel is Pixel.GALAXY)
 
     @staticmethod
     def find_expanded_columns_and_rows(image: list[list[Pixel]]) -> tuple[set[int], set[int]]:
         empty_columns = set()
         empty_rows = set()
         for i in range(len(image)):
-            if all(x == Pixel.SPACE for x in image[i]):
+            if all(x is Pixel.SPACE for x in image[i]):
                 empty_rows.add(i)
         for j in range(len(image[0])):
-            if all(row[j] == Pixel.SPACE for row in image):
+            if all(row[j] is Pixel.SPACE for row in image):
                 empty_columns.add(j)
         return empty_columns, empty_rows
     
     def find_distances(self, expansion_coefficient: int = 2) -> int:
         moves = 0
-        for gal1, gal2 in combinations(self.galaxies, 2):
-            move = 0
-            for coord in gal1.get_path(gal2):
-                if coord != gal1:
-                    if coord.i in self.empty_columns:
-                        move += expansion_coefficient
-                    elif coord.j in self.empty_rows:
-                        move += expansion_coefficient
-                    else:
-                        move += 1
-            moves += move
+        for i, gal1 in enumerate(self.galaxies):
+            for gal2 in self.galaxies[:i]:
+                for r in range(min(gal1.i, gal2.i), max(gal1.i, gal2.i)):
+                    moves += expansion_coefficient if r in self.empty_rows else 1
+                for c in range(min(gal1.j, gal2.j), max(gal1.j, gal2.j)):
+                    moves += expansion_coefficient if c in self.empty_columns else 1
         return moves
 
 class Day11(DayBase):
