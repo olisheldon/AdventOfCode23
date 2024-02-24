@@ -19,34 +19,32 @@ class Pixel(Enum):
             case _:
                 raise RuntimeError(f"Pixel {c} is not recognised.")
             
-@dataclass(frozen=True, order=True)
+@dataclass(frozen=True)
 class Coord:
     i: int
     j: int
 
     def get_path(self, other: 'Coord') -> list['Coord']:
         path_vertical = self.get_path_vertical(other)
-        path_horizontal = self.get_path_horizontal(path_vertical[-1])
-        return sorted(list(set(path_vertical + path_horizontal)))
+        # print(path_vertical)
+        path_horizontal = self.get_path_horizontal(other)
+        return list(set(path_vertical + path_horizontal))
     
     def get_path_vertical(self, other: 'Coord') -> list['Coord']:
-        coords = []
-
         if self.is_north(other):
-            coords += Coord(self.i + 1, other.j).get_path_vertical(other)
+            return [Coord(self.i + di, self.j) for di in range(0, other.i - self.i + 1, 1)]
         elif self.is_south(other):
-            coords += Coord(self.i - 1, other.j).get_path_vertical(other)
-        return coords + [Coord(self.i, other.j)]
+            return [Coord(self.i + di, self.j) for di in range(0, other.i - self.i - 1, -1)]
+        else:
+            return [self]
     
     def get_path_horizontal(self, other: 'Coord') -> list['Coord']:
-        coords = []
-
         if self.is_west(other):
-            coords += Coord(other.i, self.j + 1).get_path_horizontal(other)
+            return [Coord(self.i, self.j + dj) for dj in range(0, other.j - self.j + 1, 1)]
         elif self.is_east(other):
-            coords += Coord(other.i, self.j - 1).get_path_horizontal(other)
-        return coords + [Coord(other.i, self.j)]
-            
+            return [Coord(self.i, self.j + dj) for dj in range(0, other.j - self.j - 1, -1)]
+        else:
+            return [self]
     
     def is_west(self, other: 'Coord') -> bool:
         return self.j < other.j
@@ -86,10 +84,10 @@ class Image:
         empty_columns = set()
         empty_rows = set()
         for i in range(len(image)):
-            if all([x == Pixel.SPACE for x in image[i]]):
+            if all(x == Pixel.SPACE for x in image[i]):
                 empty_rows.add(i)
         for j in range(len(image[0])):
-            if all([row[j] == Pixel.SPACE for row in image]):
+            if all(row[j] == Pixel.SPACE for row in image):
                 empty_columns.add(j)
         return empty_columns, empty_rows
     
