@@ -1,5 +1,4 @@
 from overrides import override
-
 from aoc23_base import DayBase
 from enum import Enum, auto
 
@@ -51,7 +50,7 @@ class PlatformObject(Enum):
     
     @property
     def moveable(self) -> bool:
-        return self is self.ROUND_ROCK
+        return self is PlatformObject.ROUND_ROCK
 
 class Direction(Enum):
     NORTH = auto()
@@ -61,9 +60,9 @@ class Direction(Enum):
 
 class ControlPlatform:
 
-    def __init__(self, control_platform: tuple[tuple[PlatformObject]]):
-        self.control_platform: tuple[tuple[PlatformObject]] = control_platform
-        self.cache: dict[tuple[tuple[PlatformObject]], tuple[tuple[PlatformObject]]] = {}
+    def __init__(self, control_platform: tuple[tuple[PlatformObject, ...], ...]):
+        self.control_platform: tuple[tuple[PlatformObject, ...], ...] = control_platform
+        self.cache: dict[tuple[tuple[PlatformObject, ...], ...], tuple[tuple[PlatformObject, ...], ...]] = {}
 
     def __str__(self) -> str:
         return self.__repr__()
@@ -95,7 +94,6 @@ class ControlPlatform:
                 self._tilt_east()
             case Direction.WEST:
                 self._tilt_west()
-
 
     def _tilt_north(self) -> None:
         control_platform = list(list(control_platform) for control_platform in self.control_platform)
@@ -158,7 +156,6 @@ class ControlPlatform:
     def cycle(self, cycles:int=1000000000) -> int:
         score = self.score
         for _ in range(cycles):
-            print(_)
             cache_index = self.control_platform
             if cache_index in self.cache:
                 self.control_platform = self.cache[cache_index]
@@ -173,8 +170,6 @@ class ControlPlatform:
                 return score
             score = self.score
         return score
-
-
 
 class Day14(DayBase):
     
@@ -195,7 +190,6 @@ class Day14(DayBase):
         control_platform = ControlPlatform.create_control_platform([[PlatformObject.from_str(c) for c in s] for s in self.input])
         control_platform.cycle()
         return control_platform.score
-
 
 if __name__ == "__main__":
     day14 = Day14()
