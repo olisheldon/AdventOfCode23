@@ -67,7 +67,11 @@ class Pattern:
     
     @staticmethod
     def submirror_one_difference(pattern1: list[list[Covering]], pattern2: list[list[Covering]]) -> bool:
-        return sum(sum(0 if elem1 == elem2 else 1 for elem1, elem2 in zip(row1, row2)) for row1, row2 in zip(pattern1, pattern2)) == 1
+        total_differences = 0
+        for row1, row2 in zip(pattern1, pattern2):
+            num_mismatches_in_row = sum(0 if elem1 == elem2 else 1 for elem1, elem2 in zip(row1, row2))
+            total_differences += num_mismatches_in_row
+        return total_differences == 1
 
 class Day13(DayBase):
     
