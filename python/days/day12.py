@@ -1,6 +1,7 @@
 from overrides import override
 from aoc23_base import DayBase
 from enum import Enum, auto
+from functools import lru_cache
 
 class SpringType(Enum):
     OPERATIONAL = auto()
@@ -43,10 +44,14 @@ class Row:
     def __repr__(self) -> str:
         return f"{''.join(spring.__repr__() for spring in self.springs)} {self.configuration}"
     
-    def combinations(self) -> int:
-        return self._combinations(tuple(self.springs), tuple(self.configuration))
+    def combinations(self, folding_factor: int = 1) -> int:
+        springs = self.springs.copy()
+        for _ in range(folding_factor - 1):
+            springs.extend([SpringType.UNKNOWN] + self.springs)
+        return self._combinations(tuple(springs), tuple(self.configuration * folding_factor))
 
     @staticmethod
+    @lru_cache
     def _combinations(springs: tuple[SpringType, ...], configuration: tuple[int, ...]) -> int:
 
         # Base cases
@@ -58,6 +63,7 @@ class Row:
 
         result = 0
 
+        # Decisions
         if springs[0] in (SpringType.OPERATIONAL, SpringType.UNKNOWN):
             result += Row._combinations(springs[1:], configuration) # treat unknown spring as an operational spring
         
@@ -101,7 +107,7 @@ class Day12(DayBase):
 
     @override
     def part_2(self) -> int:
-        pass
+        return sum(row.combinations(folding_factor=5) for row in self.field.rows)
 
 if __name__ == "__main__":
     day12 = Day12()
