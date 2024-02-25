@@ -80,7 +80,7 @@ class Day22(DayBase):
         super().__init__()
         self.brick_container = BrickContainer(self.input)
 
-    def parse(self):
+    def parse(self) -> list[str]:
         pass
                       
     @override
