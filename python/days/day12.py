@@ -44,50 +44,47 @@ class Row:
         return f"{''.join(spring.__repr__() for spring in self.springs)} {self.configuration}"
     
     def combinations(self) -> int:
-        return self._combinations(self, 0, self.configuration, 0)
-    
-    def _combinations(self, springs: 'Row', l: int, counts: list[int], combos: int) -> int:
-        if not counts and l == len(springs.springs) - 1:
-            return 1
-        if not counts and any(spring is SpringType.UNKNOWN for spring in self.springs):
-            return 0
+        return self._combinations(tuple(self.springs), tuple(self.configuration))
 
-        while l < len(springs.springs):
-            if springs.springs[l] is SpringType.UNKNOWN:
-                springs_with_damaged_at_l = Row(springs.springs.copy(), self.configuration)
-                springs_with_damaged_at_l.springs[l] = SpringType.DAMAGED
-                springs_with_operational_at_l = Row(springs.springs.copy(), self.configuration)
-                springs_with_operational_at_l.springs[l] = SpringType.OPERATIONAL
-                combos += self._combinations(springs_with_damaged_at_l, l, counts, combos)
-                combos += self._combinations(springs_with_operational_at_l, l, counts, combos)
-            elif springs.springs[l] is SpringType.OPERATIONAL:
-                combos += self._combinations(self, l + 1, counts, combos)
-            elif springs.springs[l] is SpringType.DAMAGED:
-                if springs.all_operational_in_range(l - counts[0], l + 1):
-                    counts.pop(0)
-                    combos += self._combinations(self, l + 1, counts, combos)
-                else:
-                    combos += self._combinations(self, l + 1, counts, combos)
-        return combos
-    
-    def all_operational_in_range(self, l: int, r: int) -> bool:
-        if l < 0 or r > len(self.springs):
-            return False
-        return all(spring is SpringType.OPERATIONAL for spring in self.springs[l: r])
+    @staticmethod
+    def _combinations(springs: tuple[SpringType, ...], configuration: tuple[int, ...]) -> int:
+
+        # Base cases
+        if not springs:
+            return 1 if not configuration else 0 # can only be valid if we are not expecting any more operational springs
+        if not configuration:
+            return 0 if SpringType.DAMAGED in springs else 1 # if we are not expecting more springs but there are still
+                                                             # damaged springs this must not be valid
+
+        result = 0
+
+        if springs[0] in (SpringType.OPERATIONAL, SpringType.UNKNOWN):
+            result += Row._combinations(springs[1:], configuration) # treat unknown spring as an operational spring
+        
+        if springs[0] in (SpringType.DAMAGED, SpringType.UNKNOWN):
+            # treat unknown as a damaged spring
+            # this is the start of a block of damaged springs, but we need to determine: valid or invalid?
+            if (configuration[0] <= len(springs) and # number of possible springs we are considering must be less than number of springs left
+               SpringType.OPERATIONAL not in springs[:configuration[0]] and # block of damaged springs can't contain operational spring
+               (configuration[0] == len(springs) or # not springs left, so number of springs left equals the configuration
+                springs[configuration[0]] != SpringType.DAMAGED)): # OR if there are springs afterwards the next spring must not be damaged!
+                    result += Row._combinations(springs[configuration[0] + 1 : ], # index springs by configuration[0] + 1 as we are looking for new damaged blocks
+                                                configuration[1:])                # and we know springs[configuration[0] + 1] is unknown or operational!
+                                                                                  # We also found a damaged block, so remove the first config and recurse.
+        return result
 
 class Field:
 
-    def __init__(self, input: list[str]):
-        self.rows: list[Row] = Field.create_field(input)
+    def __init__(self, field_str: list[str]):
+        self.rows: list[Row] = Field.create_field(field_str)
 
     @classmethod
-    def create_field(cls, input: list[str]) -> list[Row]:
+    def create_field(cls, field_str: list[str]) -> list[Row]:
         res: list[Row] = []
-        for line in input:
+        for line in field_str:
             springs, spring_lengths = line.split()
             res.append(Row([SpringType.from_str(spring) for spring in springs], [int(spring_length) for spring_length in spring_lengths.split(',')]))
         return res
-            
 
 class Day12(DayBase):
     
@@ -100,7 +97,7 @@ class Day12(DayBase):
 
     @override
     def part_1(self) -> int:
-        return self.field.rows[0].combinations()
+        return sum(row.combinations() for row in self.field.rows)
 
     @override
     def part_2(self) -> int:
