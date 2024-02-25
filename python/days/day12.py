@@ -58,7 +58,7 @@ class Row:
         if not springs:
             return 1 if not configuration else 0 # can only be valid if we are not expecting any more operational springs
         if not configuration:
-            return 0 if SpringType.DAMAGED in springs else 1 # if we are not expecting more springs but there are still
+            return 1 if SpringType.DAMAGED not in springs else 0 # if we are not expecting more springs but there are still
                                                              # damaged springs this must not be valid
 
         result = 0
