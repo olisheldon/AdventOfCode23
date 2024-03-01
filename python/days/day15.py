@@ -1,39 +1,6 @@
 from overrides import override
 from aoc23_base import DayBase
-from enum import Enum, auto
 import abc
-
-class Operation(Enum):
-    EQUALS = auto()
-    MINUS = auto()
-
-    @classmethod
-    def from_str(cls, s: str) -> 'Operation':
-        if '=' in s and '-' not in s:
-            return cls.EQUALS
-        if '-' in s and '=' not in s:
-            return cls.MINUS
-        raise RuntimeError(f"String {s} does not contain only equals or minus.")
-
-    @classmethod
-    def from_char(cls, c: str) -> 'Operation':
-        match c:
-            case '=':
-                return cls.EQUALS
-            case '-':
-                return cls.MINUS
-            case _:
-                raise RuntimeError(f"Char {c} is not recognised.")
-                       
-    @classmethod
-    def from_operation(cls, s: 'Operation') -> str:
-        match s:
-            case cls.EQUALS:
-                return '-'
-            case cls.MINUS:
-                return '='
-            case _:
-                raise RuntimeError(f"Operation {s} is not recognised.")
     
 class Hasher:
 
@@ -52,11 +19,10 @@ class Hasher:
             current_value *= 17
             current_value %= 256
         return current_value
-
+    
 class InitSequenceElementBase(abc.ABC):
 
-    def __init__(self, operation: Operation, name: str):
-        self.operation: Operation = operation
+    def __init__(self, name: str):
         self.name: str = name
         self.hash_value: int = Hasher.hash_value(name)
     
@@ -77,18 +43,14 @@ class InitSequenceElementBase(abc.ABC):
 class EqualInitSequenceElement(InitSequenceElementBase):
 
     def __init__(self, name: str, value: int):
-        super().__init__(Operation.EQUALS, name)
+        super().__init__(name)
         self.value: int = value
 
     @override
     def operate_on_boxes(self, boxes: 'Boxes') -> None:
         boxes.add(self.name, self.hash_value, self.value)
 
-
 class MinusInitSequenceElement(InitSequenceElementBase):
-
-    def __init__(self, name: str):
-        super().__init__(Operation.MINUS, name)
 
     @override
     def operate_on_boxes(self, boxes: 'Boxes') -> None:
@@ -121,12 +83,10 @@ class Boxes:
                 focusing_power += (box_index + 1) * (lens_index + 1) * self.focal_length_map[name]
         return focusing_power
 
-
 class Day15(DayBase):
     
     def __init__(self):
         super().__init__()
-        
 
     def parse(self) -> list[str]:
         return self.input[0].split(',')
@@ -141,8 +101,6 @@ class Day15(DayBase):
         boxes = Boxes()
         boxes.process_sequence(sequence_elements)
         return boxes.focusing_power
-
-
 
 if __name__ == "__main__":
     day15 = Day15()
