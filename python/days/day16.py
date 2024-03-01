@@ -11,7 +11,6 @@ class Coord:
     def __add__(self, other: 'Coord') -> 'Coord':
         return Coord(self.i + other.i, self.j + other.j)
 
-
 class Direction(Enum):
     NORTH = auto()
     EAST = auto()
@@ -102,7 +101,7 @@ class MirrorTyle(Enum):
         directions = []
         match mirror_tyle:
             case cls.EMPTY_SPACE:
-                directions = [direction]            
+                directions = [direction]
             case cls.FORWARD_MIRROR:
                 match direction:
                     case Direction.NORTH:
@@ -143,42 +142,32 @@ class MirrorTyle(Enum):
                 raise RuntimeError(f"MirrorTyle {mirror_tyle} should not use {__class__}.")
         return directions
 
-class MirrorElementState(Enum):
-    ENERGIZED = auto()
-    NOT_ENERGIZED = auto()
-
 class Mirror:
 
     def __init__(self, mirror: list[list[str]], lasers: list[Laser] = [Laser(Coord(0, 0), Direction.EAST)]):
         self.mirror: list[list[MirrorTyle]] = list(list(MirrorTyle.from_str(tyle) for tyle in row) for row in mirror)
-        self.mirror_state: list[list[MirrorElementState]] = list(list(MirrorElementState.NOT_ENERGIZED for tyle in row) for row in mirror)
         self.lasers: list[Laser] = lasers
 
-
     def _valid_coord(self, coord: Coord) -> bool:
-        return 0 <= coord.i < len(self.mirror_state) and 0 <= coord.j < len(self.mirror_state[0])
+        return 0 <= coord.i < len(self.mirror) and 0 <= coord.j < len(self.mirror[0])
 
     def shoot_laser(self) -> int:
-        laser_states = set()
+        laser_states: set[Laser] = set()
 
         while self.lasers:
             laser = self.lasers.pop()
             if laser not in laser_states:
                 laser_states.add(laser)
-                self.mirror_state[laser.coord.i][laser.coord.j] = MirrorElementState.ENERGIZED
                 directions = MirrorTyle.query(self.mirror[laser.coord.i][laser.coord.j], laser.direction)
                 for direction in directions:
                     new_laser = Laser(laser.coord + Direction.move(direction), direction)
                     if self._valid_coord(new_laser.coord):
                         self.lasers.append(new_laser)
-        return self.energized
-    
-    @property
-    def energized(self) -> int:
-        return sum(element is MirrorElementState.ENERGIZED for row in self.mirror_state for element in row)
+
+        return len(set(laser_state.coord for laser_state in laser_states))
 
 class Day16(DayBase):
-    
+
     def __init__(self):
         super().__init__()
 
