@@ -1,178 +1,50 @@
 from overrides import override
 from aoc23_base import DayBase
+from dataclasses import dataclass
 
-from IPython import embed
+@dataclass(order=True, frozen=True)
+class Interval:
+    lower: int
+    upper: int
 
+@dataclass(frozen=True)
+class Mapping:
+    destination_range_start: int
+    source_range_start: int
+    range_length: int
 
-class SeedInterval:
-
-    def __init__(self, lower: int, upper: int):
-        if not lower <= upper:
-            raise RuntimeError(f"{lower}, {upper}")
-        if lower < 0:
-            embed()
-        self.lower: int = lower
-        self.upper: int = upper
-    
-    def __repr__(self) -> str:
-        return f"SeedInterval(lower={self.lower}, upper={self.upper})"
-    
-    def __eq__(self, __value: object) -> bool:
-        if not isinstance(__value, SeedInterval):
-            raise RuntimeError()
-        
-        return self.lower == __value.lower and self.upper == __value.upper
-    
-    def copy(self) -> 'SeedInterval':
-        return SeedInterval(self.lower, self.upper)
-
-    def apply_offset(self, offset: int) -> None:
-        self.lower += offset
-        self.upper += offset
-
-        assert 0 <= self.lower <= self.upper
-    
-    def within(self, i: int) -> bool:
-        return self.lower <= i < self.upper
-    
-    def intersection_and_outersection(self, b: 'SeedInterval') -> 'tuple[list[SeedInterval], list[SeedInterval]]':
-
-        a = self
-
-        if not a.intersects(b):
-            return [], [b]
-
-        hits = self.interval_intersection([a], [b])
-        assert len(hits) == 1
-        hit = hits[0]
-
-        misses = []
-        
-        if hits:
-            
-            if hit.lower > b.lower:
-                misses.append(SeedInterval(b.lower, hit.lower - 1))
-            
-            if hit.upper < b.upper:
-                misses.append(SeedInterval(hit.upper + 1, b.upper))
-            
-        else:
-
-            misses = [b]
-
-        return hits, misses
-    
-    @staticmethod
-    def interval_intersection(A: list['SeedInterval'], B: list['SeedInterval']) -> list['SeedInterval']:
-        ans: list['SeedInterval'] = []
-        i = j = 0
-
-        while i < len(A) and j < len(B):
-            # Let's check if A[i] intersects B[j].
-            # lo - the startpoint of the intersection
-            # hi - the endpoint of the intersection
-            lo = max(A[i].lower, B[j].lower)
-            hi = min(A[i].upper, B[j].upper)
-            if lo <= hi:
-                ans.append(SeedInterval(lo, hi))
-
-            # Remove the interval with the smallest endpoint
-            if A[i].upper < B[j].upper:
-                i += 1
-            else:
-                j += 1
-
-        return ans
-    
-    def intersects(self, other: 'SeedInterval') -> bool:
-        sorted_seed_intervals = sorted([self, other], key=lambda x: x.lower)
-        return sorted_seed_intervals[0].upper >= sorted_seed_intervals[1].lower
-
-    @staticmethod
-    def merge_intervals(seed_intervals: list['SeedInterval']) -> list['SeedInterval']:
-        # Do I want this to have side effects? Probs not
-
-        if not seed_intervals:
-            return seed_intervals
-
-        seed_intervals.sort(key=lambda interval: interval.lower)
-        merged = [seed_intervals[0]]
-        for current in seed_intervals:
-            previous = merged[-1]
-            if current.lower <= previous.upper:
-                previous.upper = max(previous.upper, current.lower)
-            else:
-                merged.append(current)
-        return merged
-    
 class Map:
     
     def __init__(self, name: str):
         self.name: str = name
-        self.mappings: list[SeedInterval] = []
-        self.mappings_offset: list[int] = []
+        self.mappings: list[Mapping] = []
 
     def __repr__(self) -> str:
         return f"{self.mappings}"
 
-    def query_mappings(self, seed_intervals: list[SeedInterval]) -> list[SeedInterval]:
+    def query_mappings(self, intervals: list[Interval]) -> list[Interval]:
+        new_intervals: list[Interval] = []
 
-        print()
-        print(self.name)
-        print(seed_intervals)
-        new_seed_intervals = self._query_mappings(seed_intervals)
-        new_seed_intervals = SeedInterval.merge_intervals(new_seed_intervals)
-        print("after merge", new_seed_intervals)
-
-        return new_seed_intervals
-    
-    def _query_mappings(self, seed_intervals: list[SeedInterval]) -> list[SeedInterval]:
-
-        print(1, seed_intervals)
-
-        hits_with_offsets: list[SeedInterval] = []
-        hits_without_offsets: list[SeedInterval] = []
-        misses: list[SeedInterval] = []
+        while intervals:
+            interval = intervals.pop()
+            for mapping in self.mappings:
+                interval_overlap_lower = max(interval.lower, mapping.source_range_start)
+                interval_overlap_upper = min(interval.upper, mapping.source_range_start + mapping.range_length)
+                if interval_overlap_lower < interval_overlap_upper:
+                    new_intervals.append(Interval(interval_overlap_lower - mapping.source_range_start + mapping.destination_range_start, interval_overlap_upper - mapping.source_range_start + mapping.destination_range_start))
+                    if interval_overlap_lower > interval.lower:
+                        intervals.append(Interval(interval.lower, interval_overlap_lower))
+                    if interval.upper > interval_overlap_upper:
+                        intervals.append(Interval(interval_overlap_upper, interval.upper))
+                    break
+            else:
+                new_intervals.append(interval)
         
-        for mapping, offset in zip(self.mappings, self.mappings_offset):
-            for seed_interval in seed_intervals:
+        return new_intervals
 
-                hits, misses = mapping.intersection_and_outersection(seed_interval)
-                print(2, seed_interval, mapping, hits, misses)
-
-                if hits:
-                    hit = hits[0]
-                    print(5, hits)
-                    hits_without_offsets.append(hit.copy())
-                    hit.apply_offset(offset)
-                    hits_with_offsets.append(hit.copy())
-                    print(5, hits)
-                    print(4, hits_with_offsets, hits_without_offsets)
-                    # misses += misses
-
-                else:
-                    misses.append(seed_interval)
-                
-        print(3, hits_with_offsets, hits_without_offsets, misses)
-
-        outersections = []
-
-        if not hits_without_offsets:
-            outersections = misses
-
-        for miss in misses:
-            for hit_without_offset in hits_without_offsets:
-                _, outersection = hit_without_offset.intersection_and_outersection(miss)
-                outersections += outersection
-        
-        return hits_with_offsets + outersections
-
-
-    def parse(self, destination_range_start: int, source_range_start: int, range_length: int):
+    def parse(self, destination_range_start: int, source_range_start: int, range_length: int) -> None:
         assert range_length >= 0
-        offset = destination_range_start - source_range_start
-        self.mappings.append(SeedInterval(source_range_start, source_range_start + range_length - 1))
-        self.mappings_offset.append(offset)
+        self.mappings.append(Mapping(destination_range_start, source_range_start, range_length))
 
 class Maps:
 
@@ -184,19 +56,19 @@ class Maps:
 
     def query_seed(self, seed: int) -> int:
         
-        unit_length_intervals = self.query_intervals([SeedInterval(seed, seed)])
+        unit_length_intervals = self.query_intervals([Interval(seed, seed + 1)])
         assert len(unit_length_intervals) == 1
         
         unit_length_interval = unit_length_intervals[0]
-        assert unit_length_interval.lower == unit_length_interval.upper
+        assert unit_length_interval.lower == unit_length_interval.upper - 1
 
         return unit_length_interval.lower
 
-    def query_intervals(self, seed_intervals: list[SeedInterval]) -> list[SeedInterval]:
+    def query_intervals(self, intervals: list[Interval]) -> list[Interval]:
+        intervals = intervals.copy()
         for pipeline in self.pipeline:
-            seed_intervals = pipeline.query_mappings(seed_intervals)
-            # seed_intervals = SeedInterval.merge_intervals(seed_intervals)
-        return seed_intervals
+            intervals = pipeline.query_mappings(intervals)
+        return intervals
 
 
 class Day5(DayBase):
@@ -207,17 +79,17 @@ class Day5(DayBase):
         self.seeds: list[int] = seeds
         self.maps: Maps = maps
 
-        self.seed_intervals: list[SeedInterval] = []
+        self.intervals: list[Interval] = []
         i = 0
         while i < len(seeds):
-            self.seed_intervals.append(SeedInterval(seeds[i], seeds[i] + seeds[i + 1] - 1))
+            self.intervals.append(Interval(seeds[i], seeds[i] + seeds[i + 1]))
             i += 2
 
     def parse(self) -> tuple[list[int], Maps]:
         pipeline: list[Map] = []
         seeds: list[int] = []
         lines = self.input.copy()
-        for i, line in enumerate(lines):
+        for _, line in enumerate(lines):
             if not line:
                 continue
             elif "map" in line:
@@ -231,16 +103,16 @@ class Day5(DayBase):
     
     @override
     def part_1(self) -> int:
-        seed_intervals = self.maps.query_intervals([SeedInterval(seed, seed) for seed in self.seeds])
-        return min(seed_interval.lower for seed_interval in  seed_intervals)
+        min_from_intervals = min(self.maps.query_intervals([Interval(seed, seed + 1) for seed in self.seeds])).lower
+        min_from_seed = min(self.maps.query_seed(seed) for seed in self.seeds)
+        assert min_from_seed == min_from_intervals
+        return min_from_seed
 
     @override
     def part_2(self) -> int:
-        seed_intervals = self.maps.query_intervals(self.seed_intervals)
-        return min(seed_interval.lower for seed_interval in  seed_intervals)
+        return min(self.maps.query_intervals(self.intervals)).lower
 
 if __name__ == "__main__":
     day5 = Day5()
-
     print(day5.part_1())
     print(day5.part_2())
