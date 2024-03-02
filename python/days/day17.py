@@ -1,8 +1,9 @@
 from overrides import override
 from aoc23_base import DayBase
 from enum import StrEnum, auto
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from heapq import heappush, heappop
+from typing import Callable
 
 @dataclass(frozen=True, order=True)
 class Coord:
@@ -57,7 +58,7 @@ class City:
     def __init__(self, heat_losses: list[list[int]]):
         self.grid = heat_losses
     
-    def minimum_heat_loss(self, start: Coord = Coord(0, 0), end: Coord | None = None) -> int:
+    def minimum_heat_loss(self, direction_predicate: Callable, start: Coord = Coord(0, 0), end: Coord | None = None) -> int:
         
         if end is None:
             end = Coord(len(self.grid) - 1, len(self.grid[0]) - 1)
@@ -65,7 +66,7 @@ class City:
         initial_crucible_states: list[tuple[int, CrucibleState]] = [(0, CrucibleState(start, direction, 0)) for direction in Direction]
 
         priority_queue: list[tuple[int, CrucibleState]] = initial_crucible_states
-        visit: set[CrucibleState] = set()
+        visited: set[CrucibleState] = set()
 
         while priority_queue:
             for _ in range(len(priority_queue)):
@@ -75,22 +76,19 @@ class City:
                 if crucible_state.coord == end:
                     return heat_loss_accum
 
-                if crucible_state in visit:
+                if crucible_state in visited:
                     continue
                 
-                visit.add(crucible_state)
+                visited.add(crucible_state)
 
                 directions = [direction for direction in Direction]
                 for next_direction in directions:
-
-                    if next_direction is Direction.reverse(crucible_state.direction):
-                        continue
 
                     next_coord = crucible_state.coord + Direction.move(next_direction)
                     if not self._within_boundary(next_coord):
                         continue
 
-                    if next_direction is crucible_state.direction and crucible_state.steps_in_direction >= 3:
+                    if not direction_predicate(next_direction, crucible_state):
                         continue
 
                     next_steps_in_direction = crucible_state.steps_in_direction + 1 if next_direction is crucible_state.direction else 1
@@ -115,11 +113,29 @@ class Day17(DayBase):
 
     @override
     def part_1(self) -> int:
-        return self.city.minimum_heat_loss()
+
+        def standard_crucible_direction_predicate(next_direction: Direction, crucible_state: CrucibleState) -> bool:
+            if next_direction is Direction.reverse(crucible_state.direction):
+                return False
+            if next_direction is crucible_state.direction and crucible_state.steps_in_direction >= 3:
+                return False
+            return True
+        
+        return self.city.minimum_heat_loss(standard_crucible_direction_predicate)
 
     @override
     def part_2(self) -> int:
-        pass
+
+        def ultra_crucible_direction_predicate(next_direction: Direction, crucible_state: CrucibleState) -> bool:
+            if next_direction is Direction.reverse(crucible_state.direction):
+                return False
+            if next_direction is not crucible_state.direction and crucible_state.steps_in_direction < 4:
+                return False
+            if next_direction is crucible_state.direction and crucible_state.steps_in_direction >= 10:
+                return False
+            return True
+        
+        return self.city.minimum_heat_loss(ultra_crucible_direction_predicate)
 
 if __name__ == "__main__":
     day17 = Day17()
