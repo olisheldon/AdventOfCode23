@@ -3,6 +3,7 @@ from aoc23_base import DayBase
 from collections import deque
 from enum import Enum, auto
 from dataclasses import dataclass
+from heapq import heappush, heappop
 
 @dataclass(frozen=True)
 class Coord:
@@ -32,11 +33,44 @@ class Direction(Enum):
             case _:
                 raise RuntimeError(f"Direction {direction} is not recognised.")
 
+    @classmethod
+    def reverse(cls, direction: 'Direction') -> 'Direction':
+        match direction:
+            case cls.NORTH:
+                return cls.SOUTH
+            case cls.EAST:
+                return cls.WEST
+            case cls.SOUTH:
+                return cls.NORTH
+            case cls.WEST:
+                return cls.EAST
+            case _:
+                raise RuntimeError(f"Direction {direction} is not recognised.")
+            
 @dataclass(frozen=True)
 class CrucibleState:
     coord: Coord
     direction: Direction
     steps_in_direction: int
+    heat_loss_accumulated: int
+    
+    def __lt__(self, other: 'CrucibleState') -> bool:
+        return self.heat_loss_accumulated < other.heat_loss_accumulated
+        
+    def __le__(self, other: 'CrucibleState') -> bool:
+        return self.heat_loss_accumulated <= other.heat_loss_accumulated
+
+    def __eq__(self, other: 'CrucibleState') -> bool:
+        return self.heat_loss_accumulated == other.heat_loss_accumulated
+        
+    def __ne__(self, other: 'CrucibleState') -> bool:
+        return not self.__eq__(other)
+        
+    def __gt__(self, other: 'CrucibleState') -> bool:
+        return not self.__lt__(other)
+        
+    def __ge__(self, other: 'CrucibleState') -> bool:
+        return not self.__le__(other)
 
 class City:
 
@@ -48,35 +82,47 @@ class City:
         if end is None:
             end = Coord(len(self.grid) - 1, len(self.grid[0]) - 1)
 
-        initial_crucible_states: list[CrucibleState] = [CrucibleState(start, direction, 1) for direction in Direction]
+        initial_crucible_states: list[CrucibleState] = [CrucibleState(start, direction, 0, 0) for direction in Direction]
 
-        queue: deque[CrucibleState] = deque(initial_crucible_states)
-        visit: set[CrucibleState] = set(initial_crucible_states)
+        priority_queue: list[CrucibleState] = initial_crucible_states
+        visit: set[CrucibleState] = set()
 
-        heat_loss: int = 0
-        directions = [direction for direction in Direction]
-        while queue:
-            for _ in range(len(queue)):
-                crucible_state = queue.popleft()
+        while priority_queue:
+            for _ in range(len(priority_queue)):
+
+                crucible_state = heappop(priority_queue)
 
                 if crucible_state.coord == end:
-                    return heat_loss
+                    return crucible_state.heat_loss_accumulated
                 
+                if crucible_state in visit:
+                    continue
+                
+                visit.add(crucible_state)
+
+                directions = [Direction.SOUTH, Direction.EAST, Direction.WEST, Direction.NORTH]
                 for next_direction in directions:
-                    next_coord = crucible_state.coord + Direction.move(next_direction)
-                    next_steps_in_direction = crucible_state.steps_in_direction + 1 if next_direction is crucible_state.direction else 1
-                    next_crucible_state = CrucibleState(next_coord, next_direction, next_steps_in_direction)
-                    if (not self._within_boundary(next_coord) or
-                        (next_direction is crucible_state.direction and crucible_state.steps_in_direction > 2) or
-                        (next_crucible_state in visit)):
+
+                    if next_direction is Direction.reverse(crucible_state.direction):
                         continue
+
+                    next_coord = crucible_state.coord + Direction.move(next_direction)
+                    if not self._within_boundary(next_coord):
+                        continue
+
+                    if next_direction is crucible_state.direction and crucible_state.steps_in_direction >= 3:
+                        continue
+
+                    next_steps_in_direction = crucible_state.steps_in_direction + 1 if next_direction is crucible_state.direction else 1
+                    next_heat_loss = self.grid[next_coord.i][next_coord.j] + crucible_state.heat_loss_accumulated
+                    next_crucible_state = CrucibleState(next_coord, next_direction, next_steps_in_direction, next_heat_loss)
                     
-                    queue.append(next_crucible_state)
-                    visit.add(crucible_state)
+                    heappush(priority_queue, next_crucible_state)
+        return -1
 
     def _within_boundary(self, coord: Coord) -> bool:
-        return 0 <= coord.i < len(self.grid) \
-           and 0 <= coord.j < len(self.grid[0])
+        return (0 <= coord.i < len(self.grid)
+           and 0 <= coord.j < len(self.grid[0]))
 
     def _too_many_steps(self, ) -> bool:
         return 
