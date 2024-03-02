@@ -56,8 +56,6 @@ class Map:
                     break
             else:
                 new_intervals.append(interval)
-
-            # new_intervals = Interval.merge_intervals(new_intervals)
         
         return new_intervals
 
@@ -87,7 +85,7 @@ class Maps:
         intervals = intervals.copy()
         for pipeline in self.pipeline:
             intervals = pipeline.query_mappings(intervals)
-            # intervals = Interval.merge_intervals(intervals)
+            intervals = Interval.merge_intervals(intervals)
         return intervals
 
 
