@@ -2,10 +2,27 @@ from overrides import override
 from aoc23_base import DayBase
 from dataclasses import dataclass
 
-@dataclass(order=True, frozen=True)
+@dataclass(order=True)
 class Interval:
     lower: int
     upper: int
+
+    @staticmethod
+    def merge_intervals(intervals: list['Interval']) -> list['Interval']:
+
+        if not intervals:
+            return intervals
+
+        intervals.sort(key=lambda interval: interval.lower)
+        merged_intervals = [intervals[0]]
+        for current_interval in intervals:
+            previous_interval = merged_intervals[-1]
+            if current_interval.lower <= previous_interval.upper:
+                previous_interval.upper = max(previous_interval.upper, current_interval.lower)
+            else:
+                merged_intervals.append(current_interval)
+
+        return merged_intervals
 
 @dataclass(frozen=True)
 class Mapping:
@@ -39,6 +56,8 @@ class Map:
                     break
             else:
                 new_intervals.append(interval)
+
+            # new_intervals = Interval.merge_intervals(new_intervals)
         
         return new_intervals
 
@@ -68,6 +87,7 @@ class Maps:
         intervals = intervals.copy()
         for pipeline in self.pipeline:
             intervals = pipeline.query_mappings(intervals)
+            # intervals = Interval.merge_intervals(intervals)
         return intervals
 
 
