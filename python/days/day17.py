@@ -1,11 +1,10 @@
 from overrides import override
 from aoc23_base import DayBase
-from collections import deque
-from enum import Enum, auto
-from dataclasses import dataclass
+from enum import StrEnum, auto
+from dataclasses import dataclass, field
 from heapq import heappush, heappop
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, order=True)
 class Coord:
     i: int
     j: int
@@ -13,7 +12,7 @@ class Coord:
     def __add__(self, other: 'Coord') -> 'Coord':
         return Coord(self.i + other.i, self.j + other.j)
 
-class Direction(Enum):
+class Direction(StrEnum):
     NORTH = auto()
     WEST = auto()
     SOUTH = auto()
@@ -46,31 +45,12 @@ class Direction(Enum):
                 return cls.EAST
             case _:
                 raise RuntimeError(f"Direction {direction} is not recognised.")
-            
-@dataclass(frozen=True)
+
+@dataclass(frozen=True, order=True)
 class CrucibleState:
     coord: Coord
     direction: Direction
     steps_in_direction: int
-    heat_loss_accumulated: int
-    
-    def __lt__(self, other: 'CrucibleState') -> bool:
-        return self.heat_loss_accumulated < other.heat_loss_accumulated
-        
-    def __le__(self, other: 'CrucibleState') -> bool:
-        return self.heat_loss_accumulated <= other.heat_loss_accumulated
-
-    def __eq__(self, other: 'CrucibleState') -> bool:
-        return self.heat_loss_accumulated == other.heat_loss_accumulated
-        
-    def __ne__(self, other: 'CrucibleState') -> bool:
-        return not self.__eq__(other)
-        
-    def __gt__(self, other: 'CrucibleState') -> bool:
-        return not self.__lt__(other)
-        
-    def __ge__(self, other: 'CrucibleState') -> bool:
-        return not self.__le__(other)
 
 class City:
 
@@ -82,25 +62,25 @@ class City:
         if end is None:
             end = Coord(len(self.grid) - 1, len(self.grid[0]) - 1)
 
-        initial_crucible_states: list[CrucibleState] = [CrucibleState(start, direction, 0, 0) for direction in Direction]
+        initial_crucible_states: list[tuple[int, CrucibleState]] = [(0, CrucibleState(start, direction, 0)) for direction in Direction]
 
-        priority_queue: list[CrucibleState] = initial_crucible_states
+        priority_queue: list[tuple[int, CrucibleState]] = initial_crucible_states
         visit: set[CrucibleState] = set()
 
         while priority_queue:
             for _ in range(len(priority_queue)):
 
-                crucible_state = heappop(priority_queue)
+                heat_loss_accum, crucible_state = heappop(priority_queue)
 
                 if crucible_state.coord == end:
-                    return crucible_state.heat_loss_accumulated
-                
+                    return heat_loss_accum
+
                 if crucible_state in visit:
                     continue
                 
                 visit.add(crucible_state)
 
-                directions = [Direction.SOUTH, Direction.EAST, Direction.WEST, Direction.NORTH]
+                directions = [direction for direction in Direction]
                 for next_direction in directions:
 
                     if next_direction is Direction.reverse(crucible_state.direction):
@@ -114,8 +94,8 @@ class City:
                         continue
 
                     next_steps_in_direction = crucible_state.steps_in_direction + 1 if next_direction is crucible_state.direction else 1
-                    next_heat_loss = self.grid[next_coord.i][next_coord.j] + crucible_state.heat_loss_accumulated
-                    next_crucible_state = CrucibleState(next_coord, next_direction, next_steps_in_direction, next_heat_loss)
+                    next_heat_loss_accum = self.grid[next_coord.i][next_coord.j] + heat_loss_accum
+                    next_crucible_state = (next_heat_loss_accum, CrucibleState(next_coord, next_direction, next_steps_in_direction))
                     
                     heappush(priority_queue, next_crucible_state)
         return -1
@@ -123,9 +103,6 @@ class City:
     def _within_boundary(self, coord: Coord) -> bool:
         return (0 <= coord.i < len(self.grid)
            and 0 <= coord.j < len(self.grid[0]))
-
-    def _too_many_steps(self, ) -> bool:
-        return 
 
 class Day17(DayBase):
     
