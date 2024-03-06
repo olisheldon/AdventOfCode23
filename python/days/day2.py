@@ -1,53 +1,60 @@
 from enum import StrEnum, auto
-from collections import UserDict
 from overrides import override
 from functools import reduce
 from aoc23_base import DayBase
 
 
-class Dice(StrEnum):
+class DiceType(StrEnum):
     RED = auto()
     GREEN = auto()
     BLUE = auto()
 
 
-class DiceDict(UserDict):
+class DiceBag:
 
     maximum_bag_contents = {
-        Dice.RED: 12,
-        Dice.GREEN: 13,
-        Dice.BLUE: 14
+        DiceType.RED: 12,
+        DiceType.GREEN: 13,
+        DiceType.BLUE: 14
     }
 
     def __init__(self):
         super().__init__()
-        for die in Dice:
-            self.update({die: 0})
+        self._bag: dict[DiceType, int] = {die: 0 for die in DiceType}
 
     def valid(self) -> bool:
-        if set(self.keys()) != set(die for die in Dice):
+        if set(self._bag.keys()) != set(die for die in DiceType):
             raise RuntimeError(
-                f"Trying to check validity of invalid die dice_set: {self.items()}")
+                f"Trying to check validity of invalid die dice_set: {self._bag.items()}")
 
-        for die in Dice:
-            if self[die] > DiceDict.maximum_bag_contents[die]:
+        for die in DiceType:
+            if self._bag[die] > DiceBag.maximum_bag_contents[die]:
                 return False
         return True
 
-    def update_max(self, dice_set: 'DiceDict') -> None:
-        for die in Dice:
-            if dice_set[die] > self[die]:
-                self[die] = dice_set[die]
+    def get_dice(self) -> dict[DiceType, int]:
+        return self._bag.copy()
+
+    def get_num_dice_of_type(self, die_type: DiceType) -> int:
+        return self._bag[die_type]
+
+    def set_num_dice_of_type(self, die_type: DiceType, val: int) -> None:
+        self._bag[die_type] = val
+
+    def update_max(self, dice_set: 'DiceBag') -> None:
+        for die in DiceType:
+            if dice_set.get_num_dice_of_type(die) > self._bag[die]:
+                self._bag[die] = dice_set.get_num_dice_of_type(die)
 
 
 class Game:
 
-    def __init__(self, id: int):
-        self.id: int = id
-        self.dice_sets: list[DiceDict] = []
-        self.max_dice_set: DiceDict = DiceDict()
+    def __init__(self, game_id: int):
+        self.game_id: int = game_id
+        self.dice_sets: list[DiceBag] = []
+        self.max_dice_set: DiceBag = DiceBag()
 
-    def add_set(self, dice_set: DiceDict) -> None:
+    def add_set(self, dice_set: DiceBag) -> None:
         self.max_dice_set.update_max(dice_set)
         self.dice_sets.append(dice_set)
 
@@ -71,23 +78,23 @@ class Day2(DayBase):
             info = line[line.find(':')+2:]
             dice_sets = info.split(';')
             for dice_set in dice_sets:
-                set_of_dice = DiceDict()
+                set_of_dice = DiceBag()
                 for num_and_colour in dice_set.split(','):
                     num, colour = num_and_colour.split()
-                    dice_colour = Dice(colour)
-                    set_of_dice[dice_colour] = int(num)
+                    dice_colour = DiceType(colour)
+                    set_of_dice.set_num_dice_of_type(dice_colour, int(num))
                 game.add_set(set_of_dice)
             games.append(game)
         return games
 
     @override
     def part_1(self) -> int:
-        return sum(game.id for game in self.games if game.valid())
+        return sum(game.game_id for game in self.games if game.valid())
 
     @override
     def part_2(self) -> int:
         max_dice_required_per_game = (
-            game.max_dice_set.values() for game in self.games)
+            game.max_dice_set.get_dice().values() for game in self.games)
         power = 0
         for max_dice_nums in max_dice_required_per_game:
             power += reduce((lambda x, y: x * y), max_dice_nums)
