@@ -3,17 +3,19 @@ from aoc23_base import DayBase
 from enum import StrEnum, auto
 from dataclasses import dataclass
 
+
 class PartCategory(StrEnum):
     x = auto()
     m = auto()
     a = auto()
     s = auto()
 
+
 @dataclass(order=True, frozen=True)
 class Interval:
     lower: int
     upper: int
-    
+
     @property
     def valid(self) -> bool:
         return self.length > 0
@@ -21,6 +23,7 @@ class Interval:
     @property
     def length(self) -> int:
         return self.upper - self.lower + 1
+
 
 class Operator(StrEnum):
     LESS_THAN = '<'
@@ -49,12 +52,14 @@ class Operator(StrEnum):
             case _:
                 raise RuntimeError(f"Operator {comparison} is not recognised.")
 
+
 class Outcome(StrEnum):
     A = auto()
     R = auto()
 
+
 class Part:
-    
+
     def __init__(self, part_str: str):
         part_ratings = part_str[1:-1].split(',')
         assert len(part_ratings) == 4
@@ -64,18 +69,36 @@ class Part:
         self.a: int = int(part_ratings[2][2:])
         self.s: int = int(part_ratings[3][2:])
 
+    def get_rating(self, part_category: PartCategory) -> int:
+        match part_category:
+            case PartCategory.x:
+                return self.x
+            case PartCategory.m:
+                return self.m
+            case PartCategory.a:
+                return self.a
+            case PartCategory.s:
+                return self.s
+            case _:
+                raise RuntimeError(
+                    f"PartCategory {part_category} is not recognised.")
+
+    @property
+    def rating(self) -> int:
+        return self.x + self.m + self.a + self.s
+
+
 class PartInterval:
-    
+
     def __init__(self, interval_dict: dict[PartCategory, Interval]):
         self.intervals = interval_dict
 
     def get_interval(self, part_category: PartCategory) -> Interval:
         return self.intervals[part_category]
-        
-    
+
     def copy(self) -> 'PartInterval':
         return PartInterval(self.intervals.copy())
-    
+
     @property
     def valid(self) -> bool:
         return all(interval.valid for interval in self.intervals.values())
@@ -83,7 +106,7 @@ class PartInterval:
     @property
     def length_products(self) -> int:
         return self.intervals[PartCategory.x].length * self.intervals[PartCategory.m].length * self.intervals[PartCategory.a].length * self.intervals[PartCategory.s].length
-    
+
 
 class Rule:
 
@@ -95,17 +118,22 @@ class Rule:
             self.value: int = int("".join(value_and_outcome).split(':')[0])
             self.outcome: str = "".join(value_and_outcome).split(':')[1]
         else:
-            self.part_category: PartCategory = PartCategory.x # arbitrary
+            self.part_category: PartCategory = PartCategory.x  # arbitrary
             self.operator: Operator = Operator.GREATER_THAN
             self.value: int = -1
             self.outcome: str = rule_str
-            
-    def partition(self, part_interval: PartInterval) -> tuple[PartInterval,PartInterval]:
-        true_interval, false_interval = Operator.partition(self.operator, part_interval.get_interval(self.part_category), self.value)
+
+    def query(self, part: Part) -> bool:
+        return Operator.query(self.operator, part.get_rating(self.part_category), self.value)
+
+    def partition(self, part_interval: PartInterval) -> tuple[PartInterval, PartInterval]:
+        true_interval, false_interval = Operator.partition(
+            self.operator, part_interval.get_interval(self.part_category), self.value)
         true_part_interval, false_part_interval = part_interval.copy(), part_interval.copy()
         true_part_interval.intervals[self.part_category] = true_interval
         false_part_interval.intervals[self.part_category] = false_interval
         return true_part_interval, false_part_interval
+
 
 class Workflow:
 
@@ -113,46 +141,79 @@ class Workflow:
         name, rules = workflow_str.split('{')
         self.name: str = name
         self.rules: list[Rule] = list(map(Rule, rules[:-1].split(',')))
-    
+
+    def query_part(self, part: Part) -> list[tuple[Part, str]]:
+        further_processing: list[tuple[Part, str]] = []
+        for rule in self.rules:
+            if rule.query(part):
+                further_processing.append((part, rule.outcome))
+            else:
+                break
+        return further_processing
+
     def query_interval(self, part_interval: PartInterval) -> list[tuple[PartInterval, str]]:
         further_processing: list[tuple[PartInterval, str]] = []
         for rule in self.rules:
-            pass_part_interval, fail_part_interval = rule.partition(part_interval)
+            pass_part_interval, fail_part_interval = rule.partition(
+                part_interval)
             if pass_part_interval.valid:
                 further_processing.append((pass_part_interval, rule.outcome))
             if fail_part_interval.valid:
                 part_interval = fail_part_interval
             else:
                 break
-        
+
         return further_processing
+
 
 class Workflows:
 
     def __init__(self, workflows: list[Workflow]):
-        self.workflows: dict[str, Workflow] = {workflow.name : workflow for workflow in workflows}
+        self.workflows: dict[str, Workflow] = {
+            workflow.name: workflow for workflow in workflows}
 
-    def query_interval(self, part_interval: PartInterval, query_workflow: str = "in") -> int:
+    def query_part(self, part: Part, query_workflow: str = "in") -> bool:
+
+        # Base cases
+        if query_workflow.lower() == str(Outcome.R):
+            return False
+        if query_workflow.lower() == str(Outcome.A):
+            return True
+
+        further_processing = self.workflows[query_workflow].query_part(part)
+
+        valid = False
+
+        for part, target_workflow in further_processing:
+            valid = self.query_part(part, target_workflow)
+
+        return valid
+
+    def query_interval(self, part_interval: PartInterval, query_workflow: str = "in") -> list[PartInterval]:
         '''
         Recursive
         '''
 
+        # Base cases
         if query_workflow.lower() == str(Outcome.R):
-            return 0
+            return []
         if query_workflow.lower() == str(Outcome.A):
-            return part_interval.length_products
+            return [part_interval]
 
-        total = 0
+        total_part_intervals = []
 
-        further_processing = self.workflows[query_workflow].query_interval(part_interval)
+        further_processing = self.workflows[query_workflow].query_interval(
+            part_interval)
 
         for part_interval, target_workflow in further_processing:
-            total += self.query_interval(part_interval, target_workflow)
-        
-        return total
+            total_part_intervals += self.query_interval(
+                part_interval, target_workflow)
+
+        return total_part_intervals
+
 
 class Day19(DayBase):
-    
+
     def __init__(self):
         super().__init__()
         workflows, parts = self.parse()
@@ -184,13 +245,14 @@ class Day19(DayBase):
 
     @override
     def part_1(self) -> int:
-        pass
+        return sum(part.rating for part in self.parts if self.workflows.query_interval(part))
 
     @override
     def part_2(self) -> int:
-        part_category_intervals = PartInterval({part_category : Interval(1, 4000) for part_category in PartCategory})
-        return self.workflows.query_interval(part_category_intervals)
-        
+        part_category_intervals = PartInterval(
+            {part_category: Interval(1, 4000) for part_category in PartCategory})
+        return sum(part_interval.length_products for part_interval in self.workflows.query_interval(part_category_intervals))
+
 
 if __name__ == "__main__":
     day19 = Day19()

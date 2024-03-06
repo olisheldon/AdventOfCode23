@@ -1,7 +1,8 @@
 from overrides import override
 from aoc23_base import DayBase
 import abc
-    
+
+
 class Hasher:
 
     @staticmethod
@@ -19,13 +20,14 @@ class Hasher:
             current_value *= 17
             current_value %= 256
         return current_value
-    
+
+
 class InitSequenceElementBase(abc.ABC):
 
     def __init__(self, name: str):
         self.name: str = name
         self.hash_value: int = Hasher.hash_value(name)
-    
+
     @classmethod
     def create_init_sequence_element(cls, s: str) -> 'InitSequenceElementBase':
         if '=' in s:
@@ -35,10 +37,11 @@ class InitSequenceElementBase(abc.ABC):
             name = s[:-1]
             return MinusInitSequenceElement(name)
         raise RuntimeError(f"SequenceElement {s} is invalid.")
-            
+
     @abc.abstractmethod
     def operate_on_boxes(self, boxes: 'Boxes') -> None:
         pass
+
 
 class EqualInitSequenceElement(InitSequenceElementBase):
 
@@ -50,11 +53,13 @@ class EqualInitSequenceElement(InitSequenceElementBase):
     def operate_on_boxes(self, boxes: 'Boxes') -> None:
         boxes.add(self.name, self.hash_value, self.value)
 
+
 class MinusInitSequenceElement(InitSequenceElementBase):
 
     @override
     def operate_on_boxes(self, boxes: 'Boxes') -> None:
         boxes.remove(self.name, self.hash_value)
+
 
 class Boxes:
 
@@ -65,26 +70,28 @@ class Boxes:
     def process_sequence(self, sequence: list[InitSequenceElementBase]) -> None:
         for element in sequence:
             element.operate_on_boxes(self)
-    
+
     def remove(self, name: str, hash_value: int) -> None:
         if name in self.boxes[hash_value]:
             self.boxes[hash_value].remove(name)
-    
+
     def add(self, name: str, hash_value: int, value: int) -> None:
         if name not in self.boxes[hash_value]:
             self.boxes[hash_value].append(name)
         self.focal_length_map[name] = value
-    
+
     @property
     def focusing_power(self) -> int:
         focusing_power = 0
         for box_index, box in enumerate(self.boxes):
             for lens_index, name in enumerate(box):
-                focusing_power += (box_index + 1) * (lens_index + 1) * self.focal_length_map[name]
+                focusing_power += (box_index + 1) * \
+                    (lens_index + 1) * self.focal_length_map[name]
         return focusing_power
 
+
 class Day15(DayBase):
-    
+
     def __init__(self):
         super().__init__()
 
@@ -97,10 +104,12 @@ class Day15(DayBase):
 
     @override
     def part_2(self) -> int:
-        sequence_elements: list[InitSequenceElementBase] = [InitSequenceElementBase.create_init_sequence_element(s) for s in self.parse()]
+        sequence_elements: list[InitSequenceElementBase] = [
+            InitSequenceElementBase.create_init_sequence_element(s) for s in self.parse()]
         boxes = Boxes()
         boxes.process_sequence(sequence_elements)
         return boxes.focusing_power
+
 
 if __name__ == "__main__":
     day15 = Day15()

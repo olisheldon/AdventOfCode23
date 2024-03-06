@@ -3,6 +3,7 @@ from aoc23_base import DayBase
 from enum import Enum, Flag, auto
 from dataclasses import dataclass
 
+
 @dataclass(frozen=True)
 class Coord:
     x: int
@@ -26,7 +27,7 @@ class Coord:
     def from_str(cls, brick_str: str) -> 'Coord':
         x, y, z = brick_str.split(',')
         return Coord(int(x), int(y), int(z))
-    
+
     @classmethod
     def coord_below(cls, coord: 'Coord') -> 'Coord':
         return Coord(coord.x, coord.y, coord.z - 1)
@@ -36,7 +37,8 @@ class Brick:
 
     def __init__(self, brick_str: str):
         first_coord, second_coord = brick_str.split('~')
-        self.initial_coords: list[Coord] = Coord.get_extent(Coord.from_str(first_coord), Coord.from_str(second_coord))
+        self.initial_coords: list[Coord] = Coord.get_extent(
+            Coord.from_str(first_coord), Coord.from_str(second_coord))
 
 
 class BrickContainer:
@@ -59,30 +61,32 @@ class BrickContainer:
     def _update_brick_positions(self):
         for brick_coords, brick in self.brick_lookup.items():
             if self._can_brick_move(brick_coords):
-                coords_below = tuple(Coord.coord_below(brick_coord) for brick_coord in brick_coords)
+                coords_below = tuple(Coord.coord_below(brick_coord)
+                                     for brick_coord in brick_coords)
                 self.brick_lookup[coords_below] = brick
                 self.brick_lookup.pop(brick_coords)
-                self.occupied_coords = (self.occupied_coords - set(brick_coords)).union(set(coords_below))
+                self.occupied_coords = (
+                    self.occupied_coords - set(brick_coords)).union(set(coords_below))
                 break
 
     def _can_brick_move(self, brick_coords: tuple[Coord, ...]) -> bool:
-        occupied_coords_except_current_brick: set[Coord] = self.occupied_coords - set(brick_coords)
+        occupied_coords_except_current_brick: set[Coord] = self.occupied_coords - set(
+            brick_coords)
         for new_coord in map(Coord.coord_below, brick_coords):
             if new_coord.z <= 0 or new_coord in occupied_coords_except_current_brick:
                 return False
         return True
-    
 
 
 class Day22(DayBase):
-    
+
     def __init__(self):
         super().__init__()
         self.brick_container = BrickContainer(self.input)
 
     def parse(self) -> list[str]:
         pass
-                      
+
     @override
     def part_1(self) -> int:
         self.brick_container.update_until_settled()
@@ -90,6 +94,7 @@ class Day22(DayBase):
     @override
     def part_2(self) -> int:
         pass
+
 
 if __name__ == "__main__":
     day22 = Day22()

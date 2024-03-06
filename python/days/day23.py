@@ -5,13 +5,15 @@ from dataclasses import dataclass
 import sys
 sys.setrecursionlimit(2**15)
 
-@dataclass(frozen = True)
+
+@dataclass(frozen=True)
 class Coord:
     i: int
     j: int
 
     def __add__(self, other: 'Coord') -> 'Coord':
         return Coord(self.i + other.i, self.j + other.j)
+
 
 class Move(Enum):
     UP = auto()
@@ -32,13 +34,13 @@ class Move(Enum):
                 return Coord(0, -1)
             case _:
                 raise RuntimeError(f"Move {move} is not recognised.")
-            
+
     @classmethod
     @property
     def all_moves(cls) -> list['Move']:
         return [move for move in Move]
 
-            
+
 class PathTile(Enum):
     PATH = auto()
     FOREST = auto()
@@ -82,7 +84,7 @@ class PathTile(Enum):
                 return '<'
             case _:
                 raise RuntimeError(f"PathTile {c} is not recognised.")
-    
+
     @classmethod
     def possible_moves(cls, path_tile: 'PathTile') -> list[Move]:
         match path_tile:
@@ -131,6 +133,7 @@ class PathTile(Enum):
             case _:
                 raise RuntimeError(f"PathTile {path_tile} is not recognised.")
 
+
 class HikingMap:
 
     def __init__(self, hiking_map: list[list[PathTile]]):
@@ -138,10 +141,9 @@ class HikingMap:
 
     def __repr__(self) -> str:
         return "\n".join("".join([PathTile.from_pathtile(tile) for tile in row]) for row in self.hiking_map)
-    
+
     def repr_with_used_coords(self, used_coords: set[Coord]) -> str:
         return "\n".join("".join([PathTile.from_pathtile(tile) if Coord(i, j) not in used_coords else 'O' for (j, tile) in enumerate(row)]) for (i, row) in enumerate(self.hiking_map))
-
 
     def move(self, start: Coord = Coord(0, 1), end: Coord = Coord(22, 21)) -> int | float:
         used_coords: set[Coord] = set()
@@ -160,19 +162,18 @@ class HikingMap:
             used_coords.remove(coord)
 
             return m
-        
+
         res = dfs(start)
 
         return res
 
     def within_boundary(self, coord: Coord) -> bool:
         return 0 <= coord.i < len(self.hiking_map) \
-           and 0 <= coord.j < len(self.hiking_map[0])
-
+            and 0 <= coord.j < len(self.hiking_map[0])
 
 
 class Day23(DayBase):
-    
+
     def __init__(self):
         super().__init__()
         self.hiking_map: HikingMap = HikingMap(self.parse())
@@ -185,7 +186,7 @@ class Day23(DayBase):
                 tile_row.append(PathTile.from_str(tile))
             hiking_map.append(tile_row)
         return hiking_map
-                      
+
     @override
     def part_1(self) -> int:
         coords_longest_path = self.hiking_map.move()
@@ -196,6 +197,7 @@ class Day23(DayBase):
     @override
     def part_2(self) -> int:
         pass
+
 
 if __name__ == "__main__":
     day23 = Day23()

@@ -3,6 +3,7 @@ from aoc23_base import DayBase
 from enum import Enum, auto
 from dataclasses import dataclass
 
+
 @dataclass(frozen=True)
 class Coord:
     i: int
@@ -10,7 +11,8 @@ class Coord:
 
     def __add__(self, other: 'Coord') -> 'Coord':
         return Coord(self.i + other.i, self.j + other.j)
-    
+
+
 class Segment(Enum):
     INSIDE = auto()
     OUTSIDE = auto()
@@ -23,6 +25,7 @@ class Segment(Enum):
         if crossings % 2 == 0:
             return cls.OUTSIDE
         return cls.INSIDE
+
 
 class Move(Enum):
     NORTH = auto()
@@ -46,6 +49,7 @@ class Move(Enum):
             case _:
                 return Coord(0, 0)
 
+
 class TileType(Enum):
     VERTICAL = auto()
     HORIZONTAL = auto()
@@ -55,7 +59,6 @@ class TileType(Enum):
     BENDSE = auto()
     GROUND = auto()
     START = auto()
-
 
     @classmethod
     def from_str(cls, s: str) -> 'TileType':
@@ -79,7 +82,6 @@ class TileType(Enum):
             case _:
                 raise RuntimeError(f"Tile type {s} is not recognised.")
 
-
     @classmethod
     def tile_type_from_moves(cls, moves: list[Move]) -> 'TileType':
         set_moves: set[Move] = set(moves)
@@ -96,7 +98,7 @@ class TileType(Enum):
             return cls.BENDSW
         if set_moves == set([Move.SOUTH, Move.EAST]):
             return cls.BENDSE
-        
+
         raise RuntimeError(f"Can not handle moves={moves}")
 
 
@@ -106,10 +108,10 @@ class Tile:
         self.tile_type: TileType = TileType.from_str(tile_char)
         self.tile_char: str = tile_char
         self.segment: Segment = segment
-    
+
     def __repr__(self) -> str:
         return self.tile_char
-            
+
     def move(self, move_in: Move) -> Move:
         match self.tile_type:
             case TileType.START:
@@ -163,7 +165,8 @@ class Tile:
                     case _:
                         return Move.INVALID
             case TileType.GROUND:
-                raise RuntimeError(f"Tile type {move_in} should not be called with {self.__class__.__name__}.")
+                raise RuntimeError(
+                    f"Tile type {move_in} should not be called with {self.__class__.__name__}.")
             case _:
                 raise RuntimeError(f"Tile type {move_in} not recognised.")
 
@@ -190,19 +193,20 @@ class Maze:
                     s += str(elem)
             s += "\n"
         return s
-    
+
     def show_segment(self, segment: Segment = Segment.LOOP) -> str:
         return self.__repr__(segment)
 
     def get_beginning_moves(self) -> list[Move]:
         return list(move for move in Move if self.tiles[(self.start + Move.move_to_coord_offset(move)).i][(self.start + Move.move_to_coord_offset(move)).j].move(move) != Move.INVALID)
-    
+
     def traverse_pipes(self) -> int:
         beginning_moves: list[Move] = self.get_beginning_moves()
-        start_tile_type: TileType = TileType.tile_type_from_moves(beginning_moves)
+        start_tile_type: TileType = TileType.tile_type_from_moves(
+            beginning_moves)
         self.tiles[self.start.i][self.start.j].tile_type = start_tile_type
         self.tiles[self.start.i][self.start.j].segment = Segment.LOOP
-        move = beginning_moves[0] # pick random valid direction
+        move = beginning_moves[0]  # pick random valid direction
         move_count = 1
         coord = self.start + Move.move_to_coord_offset(move)
 
@@ -213,11 +217,11 @@ class Maze:
 
             self.tiles[coord.i][coord.j].segment = Segment.LOOP
         return move_count
-    
+
     def furthest_point(self) -> int:
         move_count = self.traverse_pipes()
         return move_count // 2 + 1 if move_count % 2 else move_count // 2
-    
+
     def partition(self) -> None:
         height: int = len(self.tiles)
         width: int = len(self.tiles[0])
@@ -228,7 +232,7 @@ class Maze:
             for j in range(width):
                 coord = Coord(i, j)
                 tile = self.tiles[coord.i][coord.j]
-                
+
                 if tile.segment is Segment.LOOP:
                     if tile.tile_type is TileType.VERTICAL:
                         inside = not inside
@@ -244,28 +248,27 @@ class Maze:
                             inside = not inside
                     else:
                         raise RuntimeError()
-                    
+
                 if tile.segment is not Segment.LOOP:
                     tile.segment = Segment.INSIDE if inside else Segment.OUTSIDE
 
     def count_segments(self, segment: Segment) -> int:
         return sum(tile.segment is segment for row in self.tiles for tile in row)
 
-    
 
 class Day10(DayBase):
-    
+
     def __init__(self):
         super().__init__()
 
     def parse(self) -> list[str]:
         return self.input
-    
+
     @override
     def part_1(self) -> int:
         maze = Maze(self.input)
         return maze.furthest_point()
-    
+
     @override
     def part_2(self) -> int:
         maze = Maze(self.input)
@@ -277,7 +280,6 @@ class Day10(DayBase):
         print(maze.show_segment(Segment.INSIDE))
         print(maze.tiles[maze.start.i][maze.start.j].tile_type)
         return counts
-
 
 
 if __name__ == "__main__":

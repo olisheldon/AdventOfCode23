@@ -5,9 +5,11 @@ from itertools import cycle
 from functools import reduce
 import math
 
+
 class MoveInstruction(StrEnum):
     L = auto()
     R = auto()
+
 
 class Node:
 
@@ -17,13 +19,13 @@ class Node:
         self.right: Node
         self.starting_node: bool = False
         self.ending_node: bool = False
-    
+
     def add_left(self, left: 'Node'):
         self.left = left
-    
+
     def add_right(self, right: 'Node'):
         self.right = right
-    
+
     def move_once(self, mi: MoveInstruction) -> 'Node':
         match mi:
             case MoveInstruction.L:
@@ -33,11 +35,14 @@ class Node:
             case _:
                 raise RuntimeError(f"{mi} is not a recognised move")
 
+
 class NodesBase:
 
     def __init__(self, nodes: list[tuple[str, str, str]], move_instructions: list[MoveInstruction]):
-        self.node_instances: list[tuple[Node, str, str]] = [(Node(node[0]), node[1], node[2]) for node in nodes]
-        node_dict: dict[str, Node] = {node[0].node_name : node[0] for node in self.node_instances}
+        self.node_instances: list[tuple[Node, str, str]] = [
+            (Node(node[0]), node[1], node[2]) for node in nodes]
+        node_dict: dict[str, Node] = {
+            node[0].node_name: node[0] for node in self.node_instances}
         self.nodes: dict[str, Node] = self._add_nodes(node_dict)
         self.move_instructions = move_instructions
         self.cycle: cycle[MoveInstruction] = cycle(move_instructions)
@@ -55,16 +60,17 @@ class Nodes(NodesBase):
 
     def __init__(self, nodes: list[tuple[str, str, str]], move_instructions: list[MoveInstruction]):
         super().__init__(nodes, move_instructions)
-    
+
     def move(self, starting_node: Node) -> int:
         curr_node: Node = starting_node
 
         moves = 0
-        while not curr_node.ending_node: 
+        while not curr_node.ending_node:
             moves += 1
             curr_node = curr_node.move_once(next(self.cycle))
         return moves
-    
+
+
 class SimultaneousNodes(NodesBase):
 
     def __init__(self, nodes: list[tuple[str, str, str]], move_instructions: list[MoveInstruction]):
@@ -82,12 +88,12 @@ class SimultaneousNodes(NodesBase):
             for i, starting_node in enumerate(starting_nodes):
                 if not first_hit_per_node[i] and starting_node.ending_node:
                     first_hit_per_node[i] = moves
-                    
+
         prime_factors = []
         for num_of_moves in first_hit_per_node:
             prime_factors += SimultaneousNodes._prime_factors(num_of_moves)
-        return reduce(lambda x, y : x * y, set(prime_factors))
-    
+        return reduce(lambda x, y: x * y, set(prime_factors))
+
     @staticmethod
     def _prime_factors(n: int) -> list[int]:
         factors: list[int] = []
@@ -101,25 +107,26 @@ class SimultaneousNodes(NodesBase):
         if n > 2:
             factors.append(n)
         return factors
-    
+
+
 class Day8(DayBase):
-    
+
     def __init__(self):
         super().__init__()
         instructions, nodes = self.parse()
-        self.instructions: list[MoveInstruction] = [MoveInstruction[i] for i in instructions]
+        self.instructions: list[MoveInstruction] = [
+            MoveInstruction[i] for i in instructions]
         self.nodes: list[tuple[str, str, str]] = nodes
-
 
     def parse(self) -> tuple[str, list[tuple[str, str, str]]]:
         instructions: str = str(self.input[0])
         nodes: list[tuple[str, str, str]] = []
         for line in self.input[2:]:
             line_split = line.split()
-            nodes.append((line_split[0], line_split[2][1:-1], line_split[3][:-1]))
+            nodes.append((line_split[0], line_split[2]
+                         [1:-1], line_split[3][:-1]))
         return instructions, nodes
 
-    
     @override
     def part_1(self) -> int:
         nodes = Nodes(self.nodes, self.instructions)
@@ -144,7 +151,8 @@ class Day8(DayBase):
                 node.ending_node = True
                 ending_nodes.append(node)
         return simultaneous_nodes.move(starting_nodes)
-    
+
+
 if __name__ == "__main__":
     day8 = Day8()
     print(day8.part_1())

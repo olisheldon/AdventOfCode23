@@ -2,6 +2,7 @@ from overrides import override
 from aoc23_base import DayBase
 from enum import Enum, auto
 
+
 class PlatformObject(Enum):
     ROUND_ROCK = auto()
     CUBE_ROCK = auto()
@@ -18,7 +19,7 @@ class PlatformObject(Enum):
                 return cls.EMPTY_SPACE
             case _:
                 raise RuntimeError(f"SpringType {c} is not recognised.")
-                       
+
     @classmethod
     def from_platform_object(cls, s: 'PlatformObject') -> str:
         match s:
@@ -30,7 +31,7 @@ class PlatformObject(Enum):
                 return '.'
             case _:
                 raise RuntimeError(f"PlatformObject {s} is not recognised.")
-        
+
     def can_move(self, other_platform_object: 'PlatformObject') -> bool:
         if self is self.ROUND_ROCK:
             match other_platform_object:
@@ -41,16 +42,18 @@ class PlatformObject(Enum):
                 case self.EMPTY_SPACE:
                     return True
                 case _:
-                    raise RuntimeError(f"Platform object {other_platform_object} is not recognised.") 
+                    raise RuntimeError(
+                        f"Platform object {other_platform_object} is not recognised.")
         return False
-    
+
     @property
     def contributes_to_load(self) -> bool:
         return self.moveable
-    
+
     @property
     def moveable(self) -> bool:
         return self is PlatformObject.ROUND_ROCK
+
 
 class Direction(Enum):
     NORTH = auto()
@@ -58,18 +61,20 @@ class Direction(Enum):
     SOUTH = auto()
     EAST = auto()
 
+
 class ControlPlatform:
 
     def __init__(self, control_platform: tuple[tuple[PlatformObject, ...], ...]):
         self.control_platform: tuple[tuple[PlatformObject, ...], ...] = control_platform
-        self.cache: dict[tuple[tuple[PlatformObject, ...], ...], tuple[tuple[PlatformObject, ...], ...]] = {}
+        self.cache: dict[tuple[tuple[PlatformObject, ...], ...],
+                         tuple[tuple[PlatformObject, ...], ...]] = {}
 
     def __str__(self) -> str:
         return self.__repr__()
 
     def __repr__(self) -> str:
         return "\n".join("".join([PlatformObject.from_platform_object(element) for element in row]) for row in self.control_platform) + "\n" + '&' * len(self.control_platform[0])
-    
+
     @staticmethod
     def create_control_platform(control_platform: list[list[PlatformObject]]) -> 'ControlPlatform':
         return ControlPlatform(tuple(tuple(row) for row in control_platform))
@@ -96,7 +101,8 @@ class ControlPlatform:
                 self._tilt_west()
 
     def _tilt_north(self) -> None:
-        control_platform = list(list(control_platform) for control_platform in self.control_platform)
+        control_platform = list(list(control_platform)
+                                for control_platform in self.control_platform)
         for i, row in enumerate(control_platform):
             for j, element in enumerate(row):
                 new_i = i - 1
@@ -110,7 +116,8 @@ class ControlPlatform:
         self.control_platform = tuple(tuple(row) for row in control_platform)
 
     def _tilt_south(self) -> None:
-        control_platform = list(list(control_platform) for control_platform in self.control_platform)
+        control_platform = list(list(control_platform)
+                                for control_platform in self.control_platform)
         for i, row in enumerate(control_platform[::-1]):
             i = len(control_platform) - 1 - i
             for j, element in enumerate(row):
@@ -125,7 +132,8 @@ class ControlPlatform:
         self.control_platform = tuple(tuple(row) for row in control_platform)
 
     def _tilt_west(self) -> None:
-        control_platform = list(list(control_platform) for control_platform in self.control_platform)
+        control_platform = list(list(control_platform)
+                                for control_platform in self.control_platform)
         for i, row in enumerate(control_platform):
             for j, element in enumerate(row):
                 new_j = j - 1
@@ -139,7 +147,8 @@ class ControlPlatform:
         self.control_platform = tuple(tuple(row) for row in control_platform)
 
     def _tilt_east(self) -> None:
-        control_platform = list(list(control_platform) for control_platform in self.control_platform)
+        control_platform = list(list(control_platform)
+                                for control_platform in self.control_platform)
         for i, row in enumerate(control_platform):
             for j, element in enumerate(row[::-1]):
                 j = len(row) - 1 - j
@@ -153,7 +162,7 @@ class ControlPlatform:
                     control_platform[i][j] = PlatformObject.EMPTY_SPACE
         self.control_platform = tuple(tuple(row) for row in control_platform)
 
-    def cycle(self, cycles:int=1000000000) -> int:
+    def cycle(self, cycles: int = 1000000000) -> int:
         score = self.score
         for _ in range(cycles):
             cache_index = self.control_platform
@@ -165,14 +174,15 @@ class ControlPlatform:
                 self.tilt(Direction.SOUTH)
                 self.tilt(Direction.EAST)
                 self.cache[cache_index] = self.control_platform
-            
+
             if score == self.score:
                 return score
             score = self.score
         return score
 
+
 class Day14(DayBase):
-    
+
     def __init__(self):
         super().__init__()
 
@@ -181,15 +191,18 @@ class Day14(DayBase):
 
     @override
     def part_1(self) -> int:
-        control_platform = ControlPlatform.create_control_platform([[PlatformObject.from_str(c) for c in s] for s in self.input])
+        control_platform = ControlPlatform.create_control_platform(
+            [[PlatformObject.from_str(c) for c in s] for s in self.input])
         control_platform.tilt()
         return control_platform.score
 
     @override
     def part_2(self) -> int:
-        control_platform = ControlPlatform.create_control_platform([[PlatformObject.from_str(c) for c in s] for s in self.input])
+        control_platform = ControlPlatform.create_control_platform(
+            [[PlatformObject.from_str(c) for c in s] for s in self.input])
         control_platform.cycle()
         return control_platform.score
+
 
 if __name__ == "__main__":
     day14 = Day14()

@@ -5,6 +5,7 @@ from abc import ABCMeta, abstractmethod
 import string
 from collections import deque
 
+
 class PulseType(Flag):
     HIGH = True
     LOW = False
@@ -19,6 +20,7 @@ class PulseType(Flag):
             return ~pulse_type
         else:
             return pulse_type
+
 
 class ModuleType(Enum):
     FLIPFLOP = auto()
@@ -36,6 +38,7 @@ class ModuleType(Enum):
                 return ModuleType.BROADCASTER
             case _:
                 raise RuntimeError(f"ModuleType {c} is not recognised.")
+
 
 class Message:
 
@@ -59,15 +62,17 @@ class Message:
             case PulseType.LOW:
                 Message.number_of_low_pulses += 1
             case _:
-                raise RuntimeError(f"PulseType {self.pulse_type} is not recognised.")
-        
+                raise RuntimeError(
+                    f"PulseType {self.pulse_type} is not recognised.")
+
 
 class ModuleBase(metaclass=ABCMeta):
-    
+
     def __init__(self, name: str, destinations_str: list[str]):
         self.name: str = name
         self.destinations_str: list[str] = destinations_str
-        self.sources_str: list[str] = [] # populated by motherboard once all modules are created
+        # populated by motherboard once all modules are created
+        self.sources_str: list[str] = []
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(name={self.name}, sources={self.sources_str}, destinations={self.destinations_str})"
@@ -89,7 +94,7 @@ class ModuleBase(metaclass=ABCMeta):
             name = type_and_name
 
         split_destinations: list[str] = destinations.split(', ')
-        
+
         match module_type:
             case ModuleType.FLIPFLOP:
                 return FlipFlop(name, split_destinations)
@@ -98,8 +103,8 @@ class ModuleBase(metaclass=ABCMeta):
             case ModuleType.BROADCASTER:
                 return Broadcast(name, split_destinations)
             case _:
-                raise RuntimeError(f"ModuleType {module_type} is not recognised.")
-
+                raise RuntimeError(
+                    f"ModuleType {module_type} is not recognised.")
 
 
 class FlipFlop(ModuleBase):
@@ -116,7 +121,7 @@ class FlipFlop(ModuleBase):
 
         if message.pulse_type is PulseType.HIGH:
             return []
-        
+
         self.state = not self.state
         return [Message(PulseType.flip(message.pulse_type, self.state), self.name, destination) for destination in self.destinations_str]
 
@@ -145,38 +150,40 @@ class Conjunction(ModuleBase):
     def add_source(self, module_name: str) -> None:
         super().add_source(module_name)
         self.sources_memory_dict[module_name] = PulseType.default()
-        
+
 
 class Broadcast(ModuleBase):
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(name={self.name}, sources={self.sources_str}, destinations={self.destinations_str})"
-    
+
     def handle(self, message: Message) -> list[Message]:
         return [Message(message.pulse_type, self.name, destination) for destination in self.destinations_str]
-        
+
 
 class Button(ModuleBase):
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(name={self.name}, sources={self.sources_str}, destinations={self.destinations_str})"
-    
+
     def handle(self, message: Message) -> list[Message]:
         return [Message(message.pulse_type, self.name, destination) for destination in self.destinations_str]
+
 
 class Exit(ModuleBase):
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(name={self.name}, sources={self.sources_str}, destinations={self.destinations_str})"
-    
+
     def handle(self, message: Message) -> list[Message]:
         return []
 
 
 class Motherboard:
-    
+
     def __init__(self, modules: list[ModuleBase]):
-        self.modules: dict[str, ModuleBase] = {module.name : module for module in modules}
+        self.modules: dict[str, ModuleBase] = {
+            module.name: module for module in modules}
         self._create_exit_modules()
         self._link_modules()
 
@@ -193,38 +200,38 @@ class Motherboard:
             for destination_name in module.destinations_str:
                 if destination_name not in module_names:
                     missing_module_names.append(destination_name)
-        
+
         for missing_module_name in missing_module_names:
             self.modules[missing_module_name] = Exit(missing_module_name, [])
-                    
-
 
     def _link_modules(self) -> None:
         for module_name, module in self.modules.items():
             for destination_name in module.destinations_str:
                 self.modules[destination_name].add_source(module_name)
-                    
 
     def press_button(self, iterations: int):
         for _ in range(iterations):
-            button_message = self.modules["broadcaster"].handle(Message(PulseType.LOW, "button", "broadcaster"))
+            button_message = self.modules["broadcaster"].handle(
+                Message(PulseType.LOW, "button", "broadcaster"))
             self.message_log.extend(button_message)
             self.deque.extend(button_message)
             while self.deque:
                 message = self.deque.popleft()
-                new_messages = self.modules[message.destination_str].handle(message)
+                new_messages = self.modules[message.destination_str].handle(
+                    message)
                 self.message_log.extend(new_messages)
                 self.deque.extend(new_messages)
 
+
 class Day20(DayBase):
-    
+
     def __init__(self):
         super().__init__()
         self.motherboard: Motherboard = Motherboard(self.parse())
 
     def parse(self) -> list[ModuleBase]:
         return [ModuleBase.create_from_str(*line.split(' -> ')) for line in self.input]
-                      
+
     @override
     def part_1(self) -> int:
 
@@ -235,6 +242,7 @@ class Day20(DayBase):
     @override
     def part_2(self) -> int:
         pass
+
 
 if __name__ == "__main__":
     day20 = Day20()

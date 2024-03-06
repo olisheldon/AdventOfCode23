@@ -5,15 +5,16 @@ from collections import Counter
 from itertools import cycle
 from typing import Type
 
+
 class CardHelperMixin:
 
     def __repr__(self) -> str:
         return self.card_to_char(self)
-    
+
     @classmethod
     def assign_hand_type(cls, cards: tuple['Card', 'Card', 'Card', 'Card', 'Card']) -> 'HandType':
         raise RuntimeError("This should only be called by subclasses.")
-    
+
     @classmethod
     def char_to_card(cls, c: str) -> 'Card':
         match c:
@@ -76,6 +77,7 @@ class CardHelperMixin:
                 return "2"
         raise RuntimeError(f"Card {card} not recognised.")
 
+
 class Card(CardHelperMixin, IntEnum):
     TWO = auto()
     THREE = auto()
@@ -112,7 +114,9 @@ class Card(CardHelperMixin, IntEnum):
             case 5:
                 return HandType.HIGH_CARD
             case _:
-                raise RuntimeError(f"Cards {cards} cannot be assigned a hand type.")
+                raise RuntimeError(
+                    f"Cards {cards} cannot be assigned a hand type.")
+
 
 class CardWithJoker(CardHelperMixin, IntEnum):
     JACK = auto()
@@ -132,7 +136,8 @@ class CardWithJoker(CardHelperMixin, IntEnum):
     @classmethod
     @override
     def assign_hand_type(cls, cards: tuple['CardWithJoker', 'CardWithJoker', 'CardWithJoker', 'CardWithJoker', 'CardWithJoker']) -> 'HandType':
-        cards_without_jack = [card for card in CardWithJoker if card != CardWithJoker.JACK]
+        cards_without_jack = [
+            card for card in CardWithJoker if card != CardWithJoker.JACK]
 
         def possibilities(cards: tuple['CardWithJoker', 'CardWithJoker', 'CardWithJoker', 'CardWithJoker', 'CardWithJoker']) -> list[list[CardWithJoker]]:
             list_of_possible_cards = [[]]
@@ -141,12 +146,13 @@ class CardWithJoker(CardHelperMixin, IntEnum):
                     for possible_cards in list_of_possible_cards:
                         possible_cards.append(card)
                 else:
-                    list_of_possible_cards = [possible_cards.copy() for _ in range(len(cards_without_jack)) for possible_cards in list_of_possible_cards]
+                    list_of_possible_cards = [possible_cards.copy() for _ in range(
+                        len(cards_without_jack)) for possible_cards in list_of_possible_cards]
                     cycle_cards = cycle(cards_without_jack)
                     for possible_cards in list_of_possible_cards:
                         possible_cards.append(next(cycle_cards))
             return list_of_possible_cards
-        
+
         best_hand: HandType = HandType.HIGH_CARD
         for possible_card in possibilities(cards):
             unique_cards = set(possible_card)
@@ -169,8 +175,10 @@ class CardWithJoker(CardHelperMixin, IntEnum):
                 case 5:
                     best_hand = max(best_hand, HandType.HIGH_CARD)
                 case _:
-                    raise RuntimeError(f"did not recognise card {len(unique_cards)}")
+                    raise RuntimeError(
+                        f"did not recognise card {len(unique_cards)}")
         return best_hand
+
 
 class HandType(IntEnum):
     HIGH_CARD = auto()
@@ -181,10 +189,12 @@ class HandType(IntEnum):
     FOUR_OF_A_KIND = auto()
     FIVE_OF_A_KIND = auto()
 
+
 class SecondaryCheck(IntEnum):
     LOSE = auto()
     DRAW = auto()
     WIN = auto()
+
 
 class Hand:
 
@@ -204,7 +214,7 @@ class Hand:
             else:
                 return SecondaryCheck.LOSE
         return SecondaryCheck.DRAW
-    
+
     def __lt__(self, other: 'Hand') -> bool:
         if self.hand_type == other.hand_type:
             match self.secondary_comparison(other):
@@ -215,7 +225,7 @@ class Hand:
                 case SecondaryCheck.LOSE:
                     return True
         return self.hand_type < other.hand_type
-        
+
     def __le__(self, other: 'Hand') -> bool:
         if self.hand_type == other.hand_type:
             match self.secondary_comparison(other):
@@ -229,25 +239,26 @@ class Hand:
 
     def __eq__(self, other: 'Hand') -> bool:
         return self.cards == other.cards
-        
+
     def __ne__(self, other: 'Hand') -> bool:
         return not self.__eq__(other)
-        
+
     def __gt__(self, other: 'Hand') -> bool:
         return not self.__lt__(other)
-        
+
     def __ge__(self, other: 'Hand') -> bool:
         return not self.__le__(other)
 
+
 class HandOfCards:
-    
+
     def __init__(self, cards: tuple[Card, Card, Card, Card, Card], bid: int):
         self.hand = Hand(cards)
         self.bid: int = bid
-    
+
     def __repr__(self) -> str:
         return f"{self.hand} {self.bid}"
-    
+
     def __lt__(self, other: 'HandOfCards') -> bool:
         return self.hand.__lt__(other.hand)
 
@@ -262,14 +273,13 @@ class HandOfCards:
 
     def __gt__(self, other: 'HandOfCards') -> bool:
         return self.hand.__gt__(other.hand)
-        
+
     def __ge__(self, other: 'HandOfCards') -> bool:
         return self.hand.__ge__(other.hand)
 
 
-
 class Day7(DayBase):
-    
+
     def __init__(self):
         super().__init__()
         self.list_of_cards: list[str] = []
@@ -291,22 +301,24 @@ class Day7(DayBase):
             list_of_cards.append(split_line[0])
             bids.append(int(split_line[1]))
         return list_of_cards, bids
-    
+
     @override
     def part_1(self) -> int:
 
-        hands_of_cards = self.create_hands_of_cards(self.list_of_cards, self.bids, Card)
+        hands_of_cards = self.create_hands_of_cards(
+            self.list_of_cards, self.bids, Card)
 
         return sum((i + 1) * hand_of_cards.bid for (i, hand_of_cards) in enumerate(sorted(hands_of_cards)))
-
 
     @override
     def part_2(self) -> int:
-            
-        hands_of_cards = self.create_hands_of_cards(self.list_of_cards, self.bids, CardWithJoker)
-        
+
+        hands_of_cards = self.create_hands_of_cards(
+            self.list_of_cards, self.bids, CardWithJoker)
+
         return sum((i + 1) * hand_of_cards.bid for (i, hand_of_cards) in enumerate(sorted(hands_of_cards)))
-    
+
+
 if __name__ == "__main__":
     day7 = Day7()
     print(day7.part_1())

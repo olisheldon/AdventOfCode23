@@ -3,11 +3,13 @@ from functools import reduce
 from overrides import override
 from aoc23_base import DayBase
 
+
 class Number:
-    
+
     def __init__(self, num: int, boundary_right: int, line_num: int):
         self.num = num
-        self.boundary_coordinates: set = self.create_boundary(boundary_right - len(str(num)) - 1, boundary_right, line_num)
+        self.boundary_coordinates: set = self.create_boundary(
+            boundary_right - len(str(num)) - 1, boundary_right, line_num)
 
     def create_boundary(self, boundary_left: int, boundary_right: int, line_num: int) -> set[tuple[int, int]]:
         boundary = set()
@@ -16,12 +18,13 @@ class Number:
 
                 boundary.add((i, j))
         return boundary
-    
+
     def within_boundary(self, coord: tuple[int, int]) -> bool:
         return coord in self.boundary_coordinates
 
+
 class Symbol:
-    
+
     def __init__(self, coord: tuple[int, int], symbol: str):
         self.coord = coord
         self.symbol = symbol
@@ -29,6 +32,7 @@ class Symbol:
     @property
     def is_gear(self) -> bool:
         return self.symbol == '*'
+
 
 class Day3(DayBase):
 
@@ -45,7 +49,7 @@ class Day3(DayBase):
                     i += number.num
                     break
         return i
-    
+
     @override
     def part_2(self) -> int:
         result = 0
@@ -79,9 +83,8 @@ class Day3(DayBase):
                 else:
                     i += 1
         return numbers, symbols
-                
 
-    
+
 if __name__ == "__main__":
     day3 = Day3()
     print(day3.part_1())

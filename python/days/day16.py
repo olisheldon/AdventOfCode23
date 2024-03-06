@@ -2,7 +2,8 @@ from overrides import override
 from aoc23_base import DayBase
 from enum import Enum, auto
 from dataclasses import dataclass
-    
+
+
 @dataclass(frozen=True)
 class Coord:
     i: int
@@ -10,6 +11,7 @@ class Coord:
 
     def __add__(self, other: 'Coord') -> 'Coord':
         return Coord(self.i + other.i, self.j + other.j)
+
 
 class Direction(Enum):
     NORTH = auto()
@@ -31,11 +33,12 @@ class Direction(Enum):
             case _:
                 raise RuntimeError(f"Direction {direction} is not recognised.")
 
+
 class MirrorQueryResponse(Enum):
     SPLIT_LASERS = auto()
     NEW_POSITION = auto()
     NO_ACTION = auto()
-    
+
     @classmethod
     def query(cls, mirror_tyle: 'MirrorTyle') -> 'MirrorQueryResponse':
         match mirror_tyle:
@@ -46,7 +49,9 @@ class MirrorQueryResponse(Enum):
             case MirrorTyle.VERTICAL_SPLITTER | MirrorTyle.HORIZONTAL_SPLITTER:
                 return cls.SPLIT_LASERS
             case _:
-                raise RuntimeError(f"MirrorTyle {mirror_tyle} is not recognised.")
+                raise RuntimeError(
+                    f"MirrorTyle {mirror_tyle} is not recognised.")
+
 
 @dataclass(frozen=True)
 class Laser:
@@ -56,6 +61,7 @@ class Laser:
     def move(self) -> 'Laser':
         coord_offset: Coord = Direction.move(self.direction)
         return Laser(self.coord + coord_offset, self.direction)
+
 
 class MirrorTyle(Enum):
     EMPTY_SPACE = auto()
@@ -79,7 +85,7 @@ class MirrorTyle(Enum):
                 return cls.HORIZONTAL_SPLITTER
             case _:
                 raise RuntimeError(f"MirrorTyle {c} is not recognised.")
-                       
+
     @classmethod
     def from_mirror_tyle(cls, s: 'MirrorTyle') -> str:
         match s:
@@ -95,7 +101,7 @@ class MirrorTyle(Enum):
                 return '-'
             case _:
                 raise RuntimeError(f"MirrorTyle {s} is not recognised.")
-    
+
     @classmethod
     def query(cls, mirror_tyle: 'MirrorTyle', direction: Direction) -> list[Direction]:
         directions = []
@@ -139,13 +145,16 @@ class MirrorTyle(Enum):
                     case Direction.NORTH:
                         directions = [Direction.NORTH]
             case _:
-                raise RuntimeError(f"MirrorTyle {mirror_tyle} should not use {__class__}.")
+                raise RuntimeError(
+                    f"MirrorTyle {mirror_tyle} should not use {__class__}.")
         return directions
+
 
 class Mirror:
 
     def __init__(self, mirror: list[list[str]], lasers: list[Laser] = [Laser(Coord(0, 0), Direction.EAST)]):
-        self.mirror: list[list[MirrorTyle]] = list(list(MirrorTyle.from_str(tyle) for tyle in row) for row in mirror)
+        self.mirror: list[list[MirrorTyle]] = list(
+            list(MirrorTyle.from_str(tyle) for tyle in row) for row in mirror)
         self.lasers: list[Laser] = lasers
 
     def _valid_coord(self, coord: Coord) -> bool:
@@ -158,13 +167,16 @@ class Mirror:
             laser = self.lasers.pop()
             if laser not in laser_states:
                 laser_states.add(laser)
-                directions = MirrorTyle.query(self.mirror[laser.coord.i][laser.coord.j], laser.direction)
+                directions = MirrorTyle.query(
+                    self.mirror[laser.coord.i][laser.coord.j], laser.direction)
                 for direction in directions:
-                    new_laser = Laser(laser.coord + Direction.move(direction), direction)
+                    new_laser = Laser(
+                        laser.coord + Direction.move(direction), direction)
                     if self._valid_coord(new_laser.coord):
                         self.lasers.append(new_laser)
 
         return len(set(laser_state.coord for laser_state in laser_states))
+
 
 class Day16(DayBase):
 
@@ -180,15 +192,20 @@ class Day16(DayBase):
     def part_2(self) -> int:
         min_i, max_i = 0, len(self.input) - 1
         min_j, max_j = 0, len(self.input[0]) - 1
-        lasers_going_north = [Laser(Coord(max_i, j), Direction.NORTH) for j in range(max_j + 1)]
-        lasers_going_east  = [Laser(Coord(i, min_j), Direction.EAST)  for i in range(max_i + 1)]
-        lasers_going_south = [Laser(Coord(min_i, j), Direction.SOUTH) for j in range(max_j + 1)]
-        lasers_going_west  = [Laser(Coord(i, max_j), Direction.WEST)  for i in range(max_i + 1)]
+        lasers_going_north = [
+            Laser(Coord(max_i, j), Direction.NORTH) for j in range(max_j + 1)]
+        lasers_going_east = [Laser(Coord(i, min_j), Direction.EAST)
+                             for i in range(max_i + 1)]
+        lasers_going_south = [
+            Laser(Coord(min_i, j), Direction.SOUTH) for j in range(max_j + 1)]
+        lasers_going_west = [Laser(Coord(i, max_j), Direction.WEST)
+                             for i in range(max_i + 1)]
         return max(Mirror([[c for c in line] for line in self.input], [laser]).shoot_laser() for laser in lasers_going_north +
-            lasers_going_east +
-            lasers_going_south +
-            lasers_going_west
-        )
+                   lasers_going_east +
+                   lasers_going_south +
+                   lasers_going_west
+                   )
+
 
 if __name__ == "__main__":
     day16 = Day16()

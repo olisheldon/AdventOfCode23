@@ -3,6 +3,7 @@ from aoc23_base import DayBase
 from enum import Enum, Flag, auto
 from dataclasses import dataclass
 
+
 class TileType(Enum):
     START = auto()
     GARDEN_PLOT = auto()
@@ -18,7 +19,8 @@ class TileType(Enum):
             case '#':
                 return cls.ROCK
             case _:
-                raise RuntimeError(f"{cls.__class__.__name__} {c} is not recognised.")
+                raise RuntimeError(
+                    f"{cls.__class__.__name__} {c} is not recognised.")
 
     @classmethod
     def from_tile(cls, c: 'TileType') -> str:
@@ -30,8 +32,10 @@ class TileType(Enum):
             case cls.ROCK:
                 return '#'
             case _:
-                raise RuntimeError(f"{cls.__class__.__name__} {c} is not recognised.")
-            
+                raise RuntimeError(
+                    f"{cls.__class__.__name__} {c} is not recognised.")
+
+
 class PositionType(Flag):
     REACHABLE = True
     UNREACHABLE = False
@@ -44,7 +48,9 @@ class PositionType(Flag):
             case cls.UNREACHABLE:
                 return '.'
             case _:
-                raise RuntimeError(f"{cls.__class__.__name__} {c} is not recognised.")
+                raise RuntimeError(
+                    f"{cls.__class__.__name__} {c} is not recognised.")
+
 
 class MapTile:
 
@@ -58,10 +64,12 @@ class MapTile:
             return PositionType.from_position(tile.position_type)
         return TileType.from_tile(tile.tile_type)
 
+
 @dataclass(frozen=True)
 class Coord:
     i: int
     j: int
+
 
 class Map:
 
@@ -75,11 +83,11 @@ class Map:
                     position = PositionType.REACHABLE
                 self.map[-1].append(MapTile(map_tile_type, position))
             self.map.append([])
-    
+
     def __repr__(self) -> str:
         return "\n".join("".join([MapTile.from_tile(element) for element in column]) for column in self.map)
 
-    def take_steps(self, iterations = 64) -> int:
+    def take_steps(self, iterations=64) -> int:
         for _ in range(iterations):
             self.update_map_with_reachable_positions()
 
@@ -97,9 +105,10 @@ class Map:
                         new_row_index = row_index + row_index_offset
                         new_column_index = column_index + column_index_offset
                         if new_row_index in self.row_limits and new_column_index in self.column_limits \
-                        and self.map[new_row_index][new_column_index].tile_type is not TileType.ROCK:
-                            
-                            new_reachable_coords.add(Coord(new_row_index, new_column_index))
+                                and self.map[new_row_index][new_column_index].tile_type is not TileType.ROCK:
+
+                            new_reachable_coords.add(
+                                Coord(new_row_index, new_column_index))
 
         for coord in new_reachable_coords:
             self.map[coord.i][coord.j].position_type = PositionType.REACHABLE
@@ -107,11 +116,11 @@ class Map:
     @property
     def column_limits(self) -> range:
         return range(0, len(self.map[0]))
-    
+
     @property
     def row_limits(self) -> range:
         return range(0, len(self.map))
-    
+
     @property
     def reachable_garden_plots(self) -> int:
         reachable_count = 0
@@ -124,14 +133,14 @@ class Map:
 
 
 class Day21(DayBase):
-    
+
     def __init__(self):
         super().__init__()
         self.map = Map(self.parse())
 
     def parse(self) -> list[list[str]]:
         return [list(s) for s in self.input]
-                      
+
     @override
     def part_1(self) -> int:
         return self.map.take_steps(64)
@@ -139,6 +148,7 @@ class Day21(DayBase):
     @override
     def part_2(self) -> int:
         pass
+
 
 if __name__ == "__main__":
     day21 = Day21()
