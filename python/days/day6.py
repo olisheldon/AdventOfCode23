@@ -6,8 +6,8 @@ from functools import reduce
 class RacePossibilities:
 
     def __init__(self, time: int, record_distance: int):
-        self.time = time
-        self.record_distance = record_distance
+        self.time: int = time
+        self.record_distance: int = record_distance
 
     @property
     def number_of_ways_to_beat(self):

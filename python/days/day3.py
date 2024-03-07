@@ -7,7 +7,7 @@ from aoc23_base import DayBase
 class Number:
 
     def __init__(self, num: int, boundary_right: int, line_num: int):
-        self.num = num
+        self.num: int = num
         self.boundary_coordinates: set = self.create_boundary(
             boundary_right - len(str(num)) - 1, boundary_right, line_num)
 

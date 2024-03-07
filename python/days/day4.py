@@ -1,20 +1,11 @@
 from overrides import override
 from aoc23_base import DayBase
 
-
-class WinningNumbers(set):
-    pass
-
-
-class ScratchcardNumbers(set):
-    pass
-
-
 class Scratchcard:
 
     def __init__(self, scratchcard_numbers: list[int], winning_numbers: list[int]):
-        self.scratchcard_numbers = ScratchcardNumbers(scratchcard_numbers)
-        self.winning_numbers = WinningNumbers(winning_numbers)
+        self.scratchcard_numbers: set[int] = set(scratchcard_numbers)
+        self.winning_numbers: set[int] = set(winning_numbers)
         self.number_of_winners: int = len(
             self.scratchcard_numbers.intersection(self.winning_numbers))
 
