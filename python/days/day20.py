@@ -74,8 +74,8 @@ class ModuleBase(metaclass=ABCMeta):
         # populated by motherboard once all modules are created
         self.sources_str: list[str] = []
 
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(name={self.name}, sources={self.sources_str}, destinations={self.destinations_str})"
+    def __repr__(self, child_vars: str = "") -> str:
+        return f"{self.__class__.__name__}(name={self.name}, sources={self.sources_str}, destinations={self.destinations_str}{child_vars})"
 
     @abstractmethod
     def handle(self, message: Message) -> list[Message]:
@@ -114,7 +114,7 @@ class FlipFlop(ModuleBase):
         self.state: bool = False
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(name={self.name}, state={self.state}, sources={self.sources_str}, destinations={self.destinations_str})"
+        return super().__repr__(f", state={self.state}")
 
     @override
     def handle(self, message: Message) -> list[Message]:
@@ -133,7 +133,7 @@ class Conjunction(ModuleBase):
         self.sources_memory_dict: dict[str, PulseType] = {}
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(name={self.name}, sources_memory={self.sources_memory_dict}, sources={self.sources_str}, destinations={self.destinations_str})"
+        return super().__repr__(f", sources_memory={self.sources_memory_dict}")
 
     @override
     def handle(self, message: Message) -> list[Message]:
@@ -154,26 +154,17 @@ class Conjunction(ModuleBase):
 
 class Broadcast(ModuleBase):
 
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(name={self.name}, sources={self.sources_str}, destinations={self.destinations_str})"
-
     def handle(self, message: Message) -> list[Message]:
         return [Message(message.pulse_type, self.name, destination) for destination in self.destinations_str]
 
 
 class Button(ModuleBase):
 
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(name={self.name}, sources={self.sources_str}, destinations={self.destinations_str})"
-
     def handle(self, message: Message) -> list[Message]:
         return [Message(message.pulse_type, self.name, destination) for destination in self.destinations_str]
 
 
 class Exit(ModuleBase):
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(name={self.name}, sources={self.sources_str}, destinations={self.destinations_str})"
 
     def handle(self, message: Message) -> list[Message]:
         return []
@@ -209,7 +200,7 @@ class Motherboard:
             for destination_name in module.destinations_str:
                 self.modules[destination_name].add_source(module_name)
 
-    def press_button(self, iterations: int):
+    def press_button(self, iterations: int = 1):
         for _ in range(iterations):
             button_message = self.modules["broadcaster"].handle(
                 Message(PulseType.LOW, "button", "broadcaster"))
