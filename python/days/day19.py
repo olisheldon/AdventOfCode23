@@ -161,14 +161,14 @@ class Day19(DayBase):
 
     def __init__(self):
         super().__init__()
-        workflows, part_intervals = self.parse()
-        self.part_intervals: list[PartInterval] = part_intervals
+        workflows, parts = self.parse()
+        self.parts: list[dict[str, int]] = parts
         self.workflows: Workflows = Workflows(workflows)
 
-    def parse(self) -> tuple[list[Workflow], list[PartInterval]]:
+    def parse(self) -> tuple[list[Workflow], list[dict[str, int]]]:
         i = 0
         workflows: list[Workflow] = []
-        part_intervals: list[PartInterval] = []
+        parts: list[dict[str, int]] = []
 
         while i < len(self.input):
             line = self.input[i]
@@ -185,15 +185,17 @@ class Day19(DayBase):
             if not line:
                 break
             cat_and_vals = line[1:-1].split(',')
-            part_intervals.append(PartInterval({PartCategory(cat_and_val[0]): Interval(
-                int(cat_and_val[2:]), int(cat_and_val[2:]) + 1) for cat_and_val in cat_and_vals}))
+            parts.append({cat_and_val[0]: int(cat_and_val[2:])
+                         for cat_and_val in cat_and_vals})
             i += 1
 
-        return workflows, part_intervals
+        return workflows, parts
 
     @override
     def part_1(self) -> int:
-        return sum(queried_part_interval.rating for part_interval in self.part_intervals for queried_part_interval in self.workflows.query_interval(part_interval))
+        part_intervals = list(PartInterval({PartCategory(k): Interval(
+            v, v + 1) for k, v in part.items()}) for part in self.parts)
+        return sum(queried_part_interval.rating for part_interval in part_intervals for queried_part_interval in self.workflows.query_interval(part_interval))
 
     @override
     def part_2(self) -> int:
