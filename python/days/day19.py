@@ -58,36 +58,6 @@ class Outcome(StrEnum):
     R = auto()
 
 
-class Part:
-
-    def __init__(self, part_str: str):
-        part_ratings = part_str[1:-1].split(',')
-        assert len(part_ratings) == 4
-
-        self.x: int = int(part_ratings[0][2:])
-        self.m: int = int(part_ratings[1][2:])
-        self.a: int = int(part_ratings[2][2:])
-        self.s: int = int(part_ratings[3][2:])
-
-    def get_rating(self, part_category: PartCategory) -> int:
-        match part_category:
-            case PartCategory.x:
-                return self.x
-            case PartCategory.m:
-                return self.m
-            case PartCategory.a:
-                return self.a
-            case PartCategory.s:
-                return self.s
-            case _:
-                raise RuntimeError(
-                    f"PartCategory {part_category} is not recognised.")
-
-    @property
-    def rating(self) -> int:
-        return self.x + self.m + self.a + self.s
-
-
 class PartInterval:
 
     def __init__(self, interval_dict: dict[PartCategory, Interval]):
@@ -102,6 +72,10 @@ class PartInterval:
     @property
     def valid(self) -> bool:
         return all(interval.valid for interval in self.intervals.values())
+
+    @property
+    def rating(self) -> int:
+        return sum(interval.lower for interval in self.intervals.values())
 
     @property
     def length_products(self) -> int:
@@ -123,9 +97,6 @@ class Rule:
             self.value: int = -1
             self.outcome: str = rule_str
 
-    def query(self, part: Part) -> bool:
-        return Operator.query(self.operator, part.get_rating(self.part_category), self.value)
-
     def partition(self, part_interval: PartInterval) -> tuple[PartInterval, PartInterval]:
         true_interval, false_interval = Operator.partition(
             self.operator, part_interval.get_interval(self.part_category), self.value)
@@ -141,15 +112,6 @@ class Workflow:
         name, rules = workflow_str.split('{')
         self.name: str = name
         self.rules: list[Rule] = list(map(Rule, rules[:-1].split(',')))
-
-    def query_part(self, part: Part) -> list[tuple[Part, str]]:
-        further_processing: list[tuple[Part, str]] = []
-        for rule in self.rules:
-            if rule.query(part):
-                further_processing.append((part, rule.outcome))
-            else:
-                break
-        return further_processing
 
     def query_interval(self, part_interval: PartInterval) -> list[tuple[PartInterval, str]]:
         further_processing: list[tuple[PartInterval, str]] = []
@@ -171,23 +133,6 @@ class Workflows:
     def __init__(self, workflows: list[Workflow]):
         self.workflows: dict[str, Workflow] = {
             workflow.name: workflow for workflow in workflows}
-
-    def query_part(self, part: Part, query_workflow: str = "in") -> bool:
-
-        # Base cases
-        if query_workflow.lower() == str(Outcome.R):
-            return False
-        if query_workflow.lower() == str(Outcome.A):
-            return True
-
-        further_processing = self.workflows[query_workflow].query_part(part)
-
-        valid = False
-
-        for part, target_workflow in further_processing:
-            valid = self.query_part(part, target_workflow)
-
-        return valid
 
     def query_interval(self, part_interval: PartInterval, query_workflow: str = "in") -> list[PartInterval]:
         '''
@@ -216,14 +161,14 @@ class Day19(DayBase):
 
     def __init__(self):
         super().__init__()
-        workflows, parts = self.parse()
-        self.parts: list[Part] = parts
+        workflows, part_intervals = self.parse()
+        self.part_intervals: list[PartInterval] = part_intervals
         self.workflows: Workflows = Workflows(workflows)
 
-    def parse(self) -> tuple[list[Workflow], list[Part]]:
+    def parse(self) -> tuple[list[Workflow], list[PartInterval]]:
         i = 0
         workflows: list[Workflow] = []
-        parts: list[Part] = []
+        part_intervals: list[PartInterval] = []
 
         while i < len(self.input):
             line = self.input[i]
@@ -233,19 +178,22 @@ class Day19(DayBase):
 
             i += 1
 
+        i += 1
+
         while i < len(self.input):
             line = self.input[i]
             if not line:
                 break
-            parts.append(Part(line))
-
+            cat_and_vals = line[1:-1].split(',')
+            part_intervals.append(PartInterval({PartCategory(cat_and_val[0]): Interval(
+                int(cat_and_val[2:]), int(cat_and_val[2:]) + 1) for cat_and_val in cat_and_vals}))
             i += 1
 
-        return workflows, parts
+        return workflows, part_intervals
 
     @override
     def part_1(self) -> int:
-        return sum(part.rating for part in self.parts if self.workflows.query_interval(part))
+        return sum(queried_part_interval.rating for part_interval in self.part_intervals for queried_part_interval in self.workflows.query_interval(part_interval))
 
     @override
     def part_2(self) -> int:
