@@ -75,8 +75,8 @@ class Map:
 
     def __init__(self, map_str: list[list[str]]):
         self.map: list[list[MapTile]] = [[]]
-        for row_index, row in enumerate(map_str):
-            for column_index, element in enumerate(row):
+        for row in map_str:
+            for element in row:
                 position = PositionType.UNREACHABLE
                 map_tile_type = TileType.from_str(element)
                 if map_tile_type is TileType.START:
@@ -124,8 +124,8 @@ class Map:
     @property
     def reachable_garden_plots(self) -> int:
         reachable_count = 0
-        for row_index, row in enumerate(self.map):
-            for column_index, map_tile in enumerate(row):
+        for row in self.map:
+            for map_tile in row:
                 if map_tile.position_type is PositionType.REACHABLE:
                     reachable_count += 1
 

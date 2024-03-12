@@ -2,8 +2,7 @@ from overrides import override
 from aoc23_base import DayBase
 from enum import Enum, auto
 from dataclasses import dataclass
-import sys
-sys.setrecursionlimit(2**15)
+from collections import defaultdict
 
 
 @dataclass(frozen=True)
@@ -13,6 +12,9 @@ class Coord:
 
     def __add__(self, other: 'Coord') -> 'Coord':
         return Coord(self.i + other.i, self.j + other.j)
+
+    def l1_neighbours(self) -> list['Coord']:
+        return [Coord(self.i + di, self.j + dj) for di, dj in ((-1, 0), (0, -1), (1, 0), (0, 1))]
 
 
 class Move(Enum):
@@ -34,11 +36,6 @@ class Move(Enum):
                 return Coord(0, -1)
             case _:
                 raise RuntimeError(f"Move {move} is not recognised.")
-
-    @classmethod
-    @property
-    def all_moves(cls) -> list['Move']:
-        return [move for move in Move]
 
 
 class PathTile(Enum):
@@ -89,9 +86,7 @@ class PathTile(Enum):
     def possible_moves(cls, path_tile: 'PathTile') -> list[Move]:
         match path_tile:
             case cls.PATH:
-                return Move.all_moves
-            case cls.FOREST:
-                return []
+                return list(Move)
             case cls.SLOPE_UP:
                 return [Move.UP]
             case cls.SLOPE_RIGHT:
@@ -100,6 +95,9 @@ class PathTile(Enum):
                 return [Move.DOWN]
             case cls.SLOPE_LEFT:
                 return [Move.LEFT]
+            case cls.FOREST:
+                raise RuntimeError(
+                    f"Queried {path_tile}s possible moves.")
             case _:
                 raise RuntimeError(f"PathTile {path_tile} is not recognised.")
 
@@ -113,23 +111,19 @@ class PathTile(Enum):
             case cls.SLOPE_UP:
                 if move is not Move.DOWN:
                     return True
-                else:
-                    return False
+                return False
             case cls.SLOPE_RIGHT:
                 if move is not Move.LEFT:
                     return True
-                else:
-                    return False
+                return False
             case cls.SLOPE_DOWN:
                 if move is not Move.UP:
                     return True
-                else:
-                    return False
+                return False
             case cls.SLOPE_LEFT:
                 if move is not Move.RIGHT:
                     return True
-                else:
-                    return False
+                return False
             case _:
                 raise RuntimeError(f"PathTile {path_tile} is not recognised.")
 
@@ -138,65 +132,126 @@ class HikingMap:
 
     def __init__(self, hiking_map: list[list[PathTile]]):
         self.hiking_map: list[list[PathTile]] = hiking_map
+        self.start: Coord = self._find_start()
+        self.end: Coord = self._find_end()
+        self.adjacency_list: dict[Coord, dict[Coord, int]
+                                  ] = self._create_adjacency_list(self.start, self.end)  # adjacency list
 
     def __repr__(self) -> str:
-        return "\n".join("".join([PathTile.from_pathtile(tile) for tile in row]) for row in self.hiking_map)
+        return "\dist_to_coord".join("".join([PathTile.from_pathtile(tile) for tile in row]) for row in self.hiking_map)
 
-    def repr_with_used_coords(self, used_coords: set[Coord]) -> str:
-        return "\n".join("".join([PathTile.from_pathtile(tile) if Coord(i, j) not in used_coords else 'O' for (j, tile) in enumerate(row)]) for (i, row) in enumerate(self.hiking_map))
+    def _find_start(self) -> Coord:
+        for j, tile in enumerate(self.hiking_map[0]):
+            if tile is PathTile.PATH:
+                return Coord(0, j)
+        raise RuntimeError()
 
-    def move(self, start: Coord = Coord(0, 1), end: Coord = Coord(22, 21)) -> int | float:
-        used_coords: set[Coord] = set()
+    def _find_end(self) -> Coord:
+        for j, tile in enumerate(self.hiking_map[-1]):
+            if tile is PathTile.PATH:
+                return Coord(len(self.hiking_map) - 1, j)
+        raise RuntimeError()
 
-        def dfs(coord: Coord) -> int | float:
-            if coord == end:
+    def _decision_coords(self, start: Coord, end: Coord) -> list[Coord]:
+        decision_coords: list[Coord] = [start, end]
+        for i, row in enumerate(self.hiking_map):
+            for j, tile in enumerate(row):
+                if tile is PathTile.FOREST:
+                    continue
+                coord = Coord(i, j)
+                neighbours_count = 0
+                for neighbour in filter(self._within_boundary, coord.l1_neighbours()):
+                    if self.hiking_map[neighbour.i][neighbour.j] is not PathTile.FOREST:
+                        neighbours_count += 1
+                if neighbours_count >= 3:
+                    decision_coords.append(coord)
+
+        return decision_coords
+
+    def _create_adjacency_list(self, start: Coord, end: Coord) -> dict[Coord, dict[Coord, int]]:
+        decision_coords = self._decision_coords(start, end)
+
+        adjacency_list: dict[Coord, dict[Coord, int]] = defaultdict(dict)
+
+        for decision_coord in decision_coords:
+            stack: list[tuple[int, Coord]] = [(0, decision_coord)]
+            visited_tiles: set[Coord] = {decision_coord}
+
+            while stack:
+                dist_to_coord, coord = stack.pop()
+
+                if dist_to_coord != 0 and coord in decision_coords:
+                    adjacency_list[decision_coord][coord] = dist_to_coord
+                    continue
+
+                for new_move in PathTile.possible_moves(self.hiking_map[coord.i][coord.j]):
+                    new_coord = coord + Move.move(new_move)
+                    if self._within_boundary(new_coord) and self.hiking_map[new_coord.i][new_coord.j] is not PathTile.FOREST and new_coord not in visited_tiles:
+                        stack.append((dist_to_coord + 1, new_coord))
+                        visited_tiles.add(new_coord)
+
+        return adjacency_list
+
+    def longest_path_length(self) -> int:
+
+        def dfs(coord: Coord, visited_tiles: set[Coord]) -> float | int:
+            if coord == self.end:
                 return 0
 
-            m = -float("inf")
+            distance = -float("inf")
 
-            used_coords.add(coord)
-            for move in Move.all_moves:
-                new_coord = coord + Move.move(move)
-                if self.within_boundary(new_coord) and PathTile.can_move(self.hiking_map[new_coord.i][new_coord.j], move) and new_coord not in used_coords:
-                    m = max(m, dfs(new_coord) + 1)
-            used_coords.remove(coord)
+            visited_tiles.add(coord)
+            for next_coord, next_coord_distance in self.adjacency_list[coord].items():
+                if next_coord not in visited_tiles:
+                    distance = max(distance, dfs(next_coord, visited_tiles) +
+                                   next_coord_distance)
+            visited_tiles.remove(coord)
 
-            return m
+            return distance
 
-        res = dfs(start)
+        longest_distance = dfs(self.start, set())
 
-        return res
+        if isinstance(longest_distance, float):
+            longest_distance = -1
+        return longest_distance
 
-    def within_boundary(self, coord: Coord) -> bool:
-        return 0 <= coord.i < len(self.hiking_map) \
-            and 0 <= coord.j < len(self.hiking_map[0])
+    def _within_boundary(self, coord: Coord) -> bool:
+        return (0 <= coord.i < len(self.hiking_map)
+                and 0 <= coord.j < len(self.hiking_map[0]))
 
 
 class Day23(DayBase):
 
     def __init__(self):
         super().__init__()
-        self.hiking_map: HikingMap = HikingMap(self.parse())
 
     def parse(self) -> list[list[PathTile]]:
         hiking_map: list[list[PathTile]] = []
-        for i, row in enumerate(self.input):
+        for row in self.input:
             tile_row = []
-            for j, tile in enumerate(row):
+            for tile in row:
                 tile_row.append(PathTile.from_str(tile))
             hiking_map.append(tile_row)
         return hiking_map
 
     @override
     def part_1(self) -> int:
-        coords_longest_path = self.hiking_map.move()
-        print(self.hiking_map)
-        print(coords_longest_path)
-        # print(self.hiking_map.repr_with_used_coords(coords_longest_path))
+        hiking_map = HikingMap(self.parse())
+        return hiking_map.longest_path_length()
 
     @override
     def part_2(self) -> int:
-        pass
+        grid = self.parse()
+        tiles_to_ignore = {PathTile.SLOPE_DOWN,
+                           PathTile.SLOPE_LEFT,
+                           PathTile.SLOPE_RIGHT,
+                           PathTile.SLOPE_UP}
+        for i, row in enumerate(grid):
+            for j, tile in enumerate(row):
+                if tile in tiles_to_ignore:
+                    grid[i][j] = PathTile.PATH
+        hiking_map = HikingMap(grid)
+        return hiking_map.longest_path_length()
 
 
 if __name__ == "__main__":
