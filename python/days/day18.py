@@ -1,12 +1,8 @@
 from overrides import override
 from aoc23_base import DayBase
-from enum import Enum, StrEnum, auto
+from enum import StrEnum, auto
 from dataclasses import dataclass
-
-
-class GroundType(Enum):
-    TRENCH = auto()
-    GROUND = auto()
+from typing import Sequence
 
 
 @dataclass(frozen=True)
@@ -16,6 +12,18 @@ class Coord:
 
     def __add__(self, other: 'Coord') -> 'Coord':
         return Coord(self.i + other.i, self.j + other.j)
+
+    def __mul__(self, other) -> 'Coord':
+
+        if isinstance(other, int):
+            return self.__class__(other * self.i, other * self.j)
+
+        raise RuntimeError(
+            f"{self.__class__.__name__} does not support multiplication by {type(other)}")
+
+    def __rmul__(self, other) -> 'Coord':
+
+        return self.__mul__(other)
 
 
 class Direction(StrEnum):
@@ -40,146 +48,100 @@ class Direction(StrEnum):
 
 
 @dataclass
-class Instruction:
-    direction: Direction
-    length: int
+class ColourMixin:
     colour: str
 
 
-class FillingState(Enum):
-    INSIDE = auto()
-    OUTSIDE = auto()
+@dataclass
+class Instruction:
+    direction: Direction
+    steps: int
+
+
+@dataclass
+class DigPlan(ColourMixin, Instruction):
+    pass
+
+
+@dataclass
+class ColourCorrection(ColourMixin, Instruction):
+
+    def __post_init__(self):
+        self.steps = int(self.colour[:-1], base=16)
+        ending_colour = self.colour[-1]
+        match ending_colour:
+            case '0':
+                direction = Direction.R
+            case '1':
+                direction = Direction.D
+            case '2':
+                direction = Direction.L
+            case '3':
+                direction = Direction.U
+            case _:
+                raise RuntimeError(
+                    f"{self.__class__.__name__} ending digit {ending_colour} is not recognised.")
+        self.direction = direction
 
 
 class Frame:
 
-    def __init__(self):
-        self.boundary_coords: dict[Coord, str] = {}
+    def __init__(self, instructions: Sequence[Instruction]):
+        self.instructions = instructions
 
-    def create_outline(self, instructions: list[Instruction]):
+    def _create_vertex_coords(self) -> list[Coord]:
         coord = Coord(0, 0)
-        for instruction in instructions:
-            coord = self._apply_instruction(instruction, coord)
+        vertex_coords: list[Coord] = [coord]
+        for instr in self.instructions:
+            coord = coord + instr.steps * Direction.move(instr.direction)
+            vertex_coords.append(coord)
+        return vertex_coords
 
-    def _apply_instruction(self, instruction: Instruction, coord: Coord) -> Coord:
-        for _ in range(instruction.length):
-            self.boundary_coords[coord] = instruction.colour
-            coord = coord + Direction.move(instruction.direction)
-        return coord
-
-    # def calculate_area(self) -> int:
-    #     fill_coords_including_outline: set[Coord] = set(self.boundary_coords.keys())
-    #     min_j_for_each_i: dict[int, int] = {}
-    #     max_j_for_each_i: dict[int, int] = {}
-    #     for coord in self.boundary_coords:
-    #         if coord.i in min_j_for_each_i:
-    #             min_j_for_each_i[coord.i] = min(min_j_for_each_i[coord.i], coord.j)
-    #         else:
-    #             min_j_for_each_i[coord.i] = coord.j
-    #         if coord.i in max_j_for_each_i:
-    #             max_j_for_each_i[coord.i] = max(max_j_for_each_i[coord.i], coord.j)
-    #         else:
-    #             max_j_for_each_i[coord.i] = coord.j
-
-    #     for i in min_j_for_each_i:
-    #         j = min_j_for_each_i[i]
-    #         while j != max_j_for_each_i[i]:
-    #             j += 1
-    #             if Coord(i - 1, j) in fill_coords_including_outline:
-    #                 fill_coords_including_outline.add(Coord(i, j))
-
-    #     return len(fill_coords_including_outline)
-
-    # def calculate_area(self) -> int:
-    #     fill_coords_including_outline: set[Coord] = set(self.boundary_coords.keys())
-    #     min_j_for_each_i: dict[int, int] = {}
-    #     max_j_for_each_i: dict[int, int] = {}
-
-    #     for coord in self.boundary_coords:
-    #         if coord.i in min_j_for_each_i:
-    #             min_j_for_each_i[coord.i] = min(min_j_for_each_i[coord.i], coord.j)
-    #         else:
-    #             min_j_for_each_i[coord.i] = coord.j
-    #         if coord.i in max_j_for_each_i:
-    #             max_j_for_each_i[coord.i] = max(max_j_for_each_i[coord.i], coord.j)
-    #         else:
-    #             max_j_for_each_i[coord.i] = coord.j
-
-    #     for i in sorted(min_j_for_each_i.keys()):
-    #         print(i)
-    #         j = min_j_for_each_i[i]
-    #         while j != max_j_for_each_i[i]:
-    #             j += 1
-    #             if Coord(i, j) not in self.boundary_coords and Coord(i - 1, j) in fill_coords_including_outline:
-    #                 fill_coords_including_outline.add(Coord(i, j))
-
-    #     return len(fill_coords_including_outline)
+    def _polygon_area(self) -> int:
+        vertex_coords = self._create_vertex_coords()
+        polygon_area = 0
+        for i, curr_vertex in enumerate(vertex_coords):
+            prev_vertex = vertex_coords[i - 1]
+            next_vertex = vertex_coords[(i + 1) % len(vertex_coords)]
+            polygon_area += curr_vertex.i * (prev_vertex.j - next_vertex.j)
+        return abs(polygon_area) // 2
 
     def calculate_area(self) -> int:
-        fill_coords_including_outline: set[Coord] = set(
-            self.boundary_coords.keys())
-        min_j_for_each_i: dict[int, int] = {}
-        max_j_for_each_i: dict[int, int] = {}
-
-        for coord in self.boundary_coords:
-            if coord.i in min_j_for_each_i:
-                min_j_for_each_i[coord.i] = min(
-                    min_j_for_each_i[coord.i], coord.j)
-            else:
-                min_j_for_each_i[coord.i] = coord.j
-            if coord.i in max_j_for_each_i:
-                max_j_for_each_i[coord.i] = max(
-                    max_j_for_each_i[coord.i], coord.j)
-            else:
-                max_j_for_each_i[coord.i] = coord.j
-
-        for i in sorted(min_j_for_each_i.keys()):
-            boundary_count = 0
-            j = min_j_for_each_i[i]
-            while j != max_j_for_each_i[i]:
-                curr_coord = Coord(i, j)
-                next_coord = Coord(i, j + 1)
-                prev_coord = Coord(i, j - 1)
-
-                if curr_coord in self.boundary_coords and next_coord not in self.boundary_coords:
-                    boundary_count += 1
-
-                if boundary_count % 2:
-                    fill_coords_including_outline.add(curr_coord)
-
-                if curr_coord not in self.boundary_coords:
-                    print(i, j, boundary_count % 2)
-
-                j += 1
-        return len(fill_coords_including_outline)
+        '''
+        Using Pick's theorem to calculate area from vertex coordinates
+        '''
+        polygon_area = self._polygon_area()
+        boundary_area = sum(instr.steps for instr in self.instructions)
+        interior_area = polygon_area - boundary_area // 2 + 1
+        return interior_area + boundary_area
 
 
 class Day18(DayBase):
 
     def __init__(self):
         super().__init__()
-        self.instructions: list[Instruction] = self.parse()
-        self.frame = Frame()
+        self.dig_plans: list[DigPlan] = self.parse()
 
-    def parse(self) -> list[Instruction]:
-        instructions: list[Instruction] = []
+    def parse(self) -> list[DigPlan]:
+        dig_plans: list[DigPlan] = []
         for line in self.input:
             split_line = line.split()
-            instruction = Instruction(Direction[split_line[0]], int(
+            dig_plan = DigPlan(Direction[split_line[0]], int(
                 split_line[1]), split_line[-1][2:-1])
-            instructions.append(instruction)
-        return instructions
+            dig_plans.append(dig_plan)
+        return dig_plans
 
     @override
     def part_1(self) -> int:
-        self.frame.create_outline(self.instructions)
-        # for coord in self.frame.coords:
-        #     print(coord)
-        return self.frame.calculate_area()
+        frame = Frame(self.dig_plans)
+        return frame.calculate_area()
 
     @override
     def part_2(self) -> int:
-        pass
+        instructions = [ColourCorrection(dig_plan.direction, dig_plan.steps,
+                                         dig_plan.colour) for dig_plan in self.dig_plans]
+        frame = Frame(instructions)
+        return frame.calculate_area()
 
 
 if __name__ == "__main__":
