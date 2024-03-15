@@ -64,7 +64,7 @@ class DigPlan(ColourMixin, Instruction):
 
 
 @dataclass
-class ColourCorrection(ColourMixin, Instruction):
+class ColourInstruction(ColourMixin, Instruction):
 
     def __post_init__(self):
         self.steps = int(self.colour[:-1], base=16)
@@ -84,7 +84,7 @@ class ColourCorrection(ColourMixin, Instruction):
         self.direction = direction
 
 
-class Frame:
+class Digger:
 
     def __init__(self, instructions: Sequence[Instruction]):
         self.instructions = instructions
@@ -93,7 +93,7 @@ class Frame:
         coord = Coord(0, 0)
         vertex_coords: list[Coord] = [coord]
         for instr in self.instructions:
-            coord = coord + instr.steps * Direction.move(instr.direction)
+            coord += instr.steps * Direction.move(instr.direction)
             vertex_coords.append(coord)
         return vertex_coords
 
@@ -106,7 +106,7 @@ class Frame:
             polygon_area += curr_vertex.i * (prev_vertex.j - next_vertex.j)
         return abs(polygon_area) // 2
 
-    def calculate_area(self) -> int:
+    def dig(self) -> int:
         '''
         Using Pick's theorem to calculate area from vertex coordinates
         '''
@@ -133,15 +133,15 @@ class Day18(DayBase):
 
     @override
     def part_1(self) -> int:
-        frame = Frame(self.dig_plans)
-        return frame.calculate_area()
+        digger = Digger(self.dig_plans)
+        return digger.dig()
 
     @override
     def part_2(self) -> int:
-        instructions = [ColourCorrection(dig_plan.direction, dig_plan.steps,
-                                         dig_plan.colour) for dig_plan in self.dig_plans]
-        frame = Frame(instructions)
-        return frame.calculate_area()
+        instructions = [ColourInstruction(dig_plan.direction, dig_plan.steps,
+                                          dig_plan.colour) for dig_plan in self.dig_plans]
+        digger = Digger(instructions)
+        return digger.dig()
 
 
 if __name__ == "__main__":
