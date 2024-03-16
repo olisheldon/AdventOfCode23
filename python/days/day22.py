@@ -1,6 +1,5 @@
 from overrides import override
 from aoc23_base import DayBase
-from enum import Enum, Flag, auto
 from dataclasses import dataclass
 from typing import Sequence
 
@@ -21,14 +20,18 @@ class Brick:
 
     def __init__(self, brick_str: str):
         first_coord, second_coord = brick_str.split('~')
-        self.coord1: Coord = Coord.from_csv(first_coord)
-        self.coord2: Coord = Coord.from_csv(second_coord)
+        self.end1: Coord = Coord.from_csv(first_coord)
+        self.end2: Coord = Coord.from_csv(second_coord)
 
     def __repr__(self) -> str:
-        return f"Brick(coord1={self.coord1}, coord2={self.coord2})"
+        return f"Brick(end1={self.end1}, end2={self.end2})"
 
-    def overlaps(self, other: 'Brick') -> bool:
-        return max(self.coord1.x, other.coord1.x) <= min(self.coord2.x, other.coord2.x) and max(self.coord1.y, other.coord1.y) <= min(self.coord2.y, other.coord2.y)
+    def overlaps(self, other: 'Brick', plane: tuple[str, str] = ('x', 'y')) -> bool:
+        '''
+        plane argument generalises overlaps to be in any pair of planes
+        '''
+        axis_0, axis_1 = plane
+        return max(getattr(self.end1, axis_0), getattr(other.end1, axis_0)) <= min(getattr(self.end2, axis_0), getattr(other.end2, axis_0)) and max(getattr(self.end1, axis_1), getattr(other.end1, axis_1)) <= min(getattr(self.end2, axis_1), getattr(other.end2, axis_1))
 
 
 class BrickContainer:
@@ -39,42 +42,42 @@ class BrickContainer:
 
     @staticmethod
     def _fall(bricks: list[Brick]) -> list[Brick]:
-        bricks.sort(key=lambda brick: brick.coord1.z)
+        bricks.sort(key=lambda brick: brick.end1.z)
         for i, brick in enumerate(bricks):
             max_z = 1
             for other in bricks[:i]:
                 if brick.overlaps(other):
-                    max_z = max(max_z, other.coord2.z + 1)
-            brick.coord2.z -= brick.coord1.z - max_z
-            brick.coord1.z = max_z
+                    max_z = max(max_z, other.end2.z + 1)
+            brick.end2.z -= brick.end1.z - max_z
+            brick.end1.z = max_z
 
         return bricks
 
     @staticmethod
     def _bidirectional_supports(bricks: Sequence[Brick]) -> tuple[dict[int, set[int]], dict[int, set[int]]]:
 
-        bricks_supporting = {i: set() for i in range(len(bricks))}
-        supporting_bricks = {i: set() for i in range(len(bricks))}
+        brick_supports = {i: set() for i in range(len(bricks))}
+        supported_by_brick = {i: set() for i in range(len(bricks))}
 
         for j, above in enumerate(bricks):
             for i, below in enumerate(bricks[:j]):
-                if below.overlaps(above) and above.coord1.z == below.coord2.z + 1:
-                    bricks_supporting[i].add(j)
-                    supporting_bricks[j].add(i)
+                if below.overlaps(above) and above.end1.z == below.end2.z + 1:
+                    brick_supports[i].add(j)
+                    supported_by_brick[j].add(i)
 
-        return bricks_supporting, supporting_bricks
+        return brick_supports, supported_by_brick
 
     def safe_disintegration_count(self) -> int:
 
         bricks = self._fall(list(self.snapshot_bricks))
 
-        bricks_supporting, supports_bricks = self._bidirectional_supports(
+        brick_supports, supported_by_brick = self._bidirectional_supports(
             bricks)
 
         total = 0
 
         for i in range(len(bricks)):
-            if all(len(supports_bricks[j]) >= 2 for j in bricks_supporting[i]):
+            if all(len(supported_by_brick[j]) >= 2 for j in brick_supports[i]):
                 total += 1
 
         return total
