@@ -1,0 +1,1 @@
+find ./day*.py -exec bash -c "echo {};python3 {}" \; > current_answers.txt
