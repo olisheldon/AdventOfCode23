@@ -1,7 +1,5 @@
 from pathlib import Path
 import argparse
-from overrides import override
-
 from dataclasses import dataclass
 from typing import Sequence
 from collections import deque
@@ -77,13 +75,39 @@ class BrickContainer:
         brick_supports_values, values_that_support_brick = self._bidirectional_supports(
             fallen_bricks)
 
-        total = 0
+        safe_count = 0
 
         for i in range(len(fallen_bricks)):
             if all(len(values_that_support_brick[j]) >= 2 for j in brick_supports_values[i]):
-                total += 1
+                safe_count += 1
 
-        return total
+        return safe_count
+
+    def chain_reaction_count(self) -> int:
+
+        fallen_bricks = self._fall(list(self.snapshot_bricks))
+
+        brick_supports_values, values_that_support_brick = self._bidirectional_supports(
+            fallen_bricks)
+
+        chain_reaction_count = 0
+
+        for dis_brick in range(len(fallen_bricks)):
+            q = deque(other_brick for other_brick in brick_supports_values[dis_brick] if len(
+                values_that_support_brick[other_brick]) == 1)
+            falling: set[int] = set(q)
+            falling.add(dis_brick)
+
+            while q:
+                non_supported_brick = q.popleft()
+                for cascade_brick in brick_supports_values[non_supported_brick]:
+                    if (cascade_brick not in falling and values_that_support_brick[cascade_brick].issubset(falling)):
+                        q.append(cascade_brick)
+                        falling.add(cascade_brick)
+
+            chain_reaction_count += len(falling) - 1
+
+        return chain_reaction_count
 
 
 class Day22:
@@ -100,7 +124,7 @@ class Day22:
         return self.brick_container.safe_disintegration_count()
 
     def part_2(self) -> int:
-        pass
+        return self.brick_container.chain_reaction_count()
 
 
 if __name__ == "__main__":
