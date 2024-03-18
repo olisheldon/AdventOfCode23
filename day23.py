@@ -138,7 +138,7 @@ class HikingMap:
                                   ] = self._create_adjacency_list(self.start, self.end)  # adjacency list
 
     def __repr__(self) -> str:
-        return "\dist_to_coord".join("".join([PathTile.from_pathtile(tile) for tile in row]) for row in self.hiking_map)
+        return "\n".join("".join([PathTile.from_pathtile(tile) for tile in row]) for row in self.hiking_map)
 
     def _find_start(self) -> Coord:
         for j, tile in enumerate(self.hiking_map[0]):
@@ -178,14 +178,16 @@ class HikingMap:
             visited_tiles: set[Coord] = {decision_coord}
 
             while stack:
-                dist_to_coord, coord = stack.pop()
+                dist_to_coord, other_coord = stack.pop()
 
-                if dist_to_coord != 0 and coord in decision_coords:
-                    adjacency_list[decision_coord][coord] = dist_to_coord
+                # it is a point of interest so add to adjacency list and continue
+                if dist_to_coord != 0 and other_coord in decision_coords:
+                    adjacency_list[decision_coord][other_coord] = dist_to_coord
                     continue
 
-                for new_move in PathTile.possible_moves(self.hiking_map[coord.i][coord.j]):
-                    new_coord = coord + Move.move(new_move)
+                # not a point of interest, pathfind out and add to stack if valid move
+                for new_move in PathTile.possible_moves(self.hiking_map[other_coord.i][other_coord.j]):
+                    new_coord = other_coord + Move.move(new_move)
                     if self._within_boundary(new_coord) and self.hiking_map[new_coord.i][new_coord.j] is not PathTile.FOREST and new_coord not in visited_tiles:
                         stack.append((dist_to_coord + 1, new_coord))
                         visited_tiles.add(new_coord)
