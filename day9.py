@@ -1,6 +1,5 @@
 from pathlib import Path
 import argparse
-from overrides import override
 
 
 def extrapolate(subhistory: list[int], forwards: bool = True) -> int:

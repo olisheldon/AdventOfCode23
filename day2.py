@@ -1,7 +1,6 @@
 from pathlib import Path
 import argparse
 from enum import StrEnum, auto
-from overrides import override
 from functools import reduce
 
 

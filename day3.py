@@ -2,7 +2,6 @@ from pathlib import Path
 import argparse
 import string
 from functools import reduce
-from overrides import override
 
 
 class Number:

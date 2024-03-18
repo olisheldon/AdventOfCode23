@@ -1,11 +1,6 @@
 from pathlib import Path
 import argparse
-from overrides import override
-from enum import Enum, auto
 from dataclasses import dataclass
-import numpy as np
-import numpy.typing as npt
-import math
 
 
 @dataclass
@@ -47,6 +42,7 @@ class Hailstone:
         a1, b1, c1 = self.linearize()
         a2, b2, c2 = other.linearize()
 
+        # Parallel
         if a1 * b2 == b1 * a2:
             return False
 
