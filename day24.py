@@ -50,7 +50,7 @@ class Hailstone:
         y = (c2 * a1 - c1 * a2) / (a1 * b2 - a2 * b1)
 
         if x_lower_bound <= x <= x_upper_bound and y_lower_bound <= y <= y_upper_bound:
-            if all(hailstone.collides_in_future(x, y) for hailstone in (self, other)):
+            if self.collides_in_future(x, y) and other.collides_in_future(x, y):
                 return True
         return False
 

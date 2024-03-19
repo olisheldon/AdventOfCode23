@@ -276,11 +276,11 @@ class Day10:
         maze = Maze(self.parse_file())
         maze.traverse_pipes()
         maze.partition()
-        print([(segment, maze.count_segments(segment)) for segment in Segment])
+        # print([(segment, maze.count_segments(segment)) for segment in Segment])
         counts = maze.count_segments(Segment.INSIDE)
 
-        print(maze.show_segment(Segment.INSIDE))
-        print(maze.tiles[maze.start.i][maze.start.j].tile_type)
+        # print(maze.show_segment(Segment.INSIDE))
+        # print(maze.tiles[maze.start.i][maze.start.j].tile_type)
         return counts
 
 
