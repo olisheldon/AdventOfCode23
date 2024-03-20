@@ -204,8 +204,7 @@ class HikingMap:
             visited_tiles.add(coord)
             for next_coord, next_coord_distance in self.adjacency_list[coord].items():
                 if next_coord not in visited_tiles:
-                    distance = max(distance, dfs(next_coord, visited_tiles) +
-                                   next_coord_distance)
+                    distance = max(distance, dfs(next_coord, visited_tiles) + next_coord_distance)
             visited_tiles.remove(coord)
 
             return distance
