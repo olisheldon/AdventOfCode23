@@ -157,11 +157,9 @@ class Day8:
 
 
 if __name__ == "__main__":
-    INPUT_FILEPATH = Path(__file__).parent / "data" / \
-        f"{Path(__file__).stem}.txt"
+    INPUT_FILEPATH = Path(__file__).parent / "data" / f"{Path(__file__).stem}.txt"
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--input', nargs='?',
-                        default=INPUT_FILEPATH, help=f"Path to data for {Path(__file__).stem}")
+    parser.add_argument('-i', '--input', nargs='?', default=INPUT_FILEPATH, help=f"Path to data for {Path(__file__).stem}")
     args = parser.parse_args()
 
     day8 = Day8(Path(args.input).absolute())

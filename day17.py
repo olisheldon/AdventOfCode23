@@ -90,20 +90,16 @@ class City:
                 directions = [direction for direction in Direction]
                 for next_direction in directions:
 
-                    next_coord = crucible_state.coord + \
-                        Direction.move(next_direction)
+                    next_coord = crucible_state.coord + Direction.move(next_direction)
                     if not self._within_boundary(next_coord):
                         continue
 
                     if not direction_predicate(next_direction, crucible_state):
                         continue
 
-                    next_steps_in_direction = crucible_state.steps_in_direction + \
-                        1 if next_direction is crucible_state.direction else 1
-                    next_heat_loss_accum = self.grid[next_coord.i][next_coord.j] + \
-                        heat_loss_accum
-                    next_crucible_state = (next_heat_loss_accum, CrucibleState(
-                        next_coord, next_direction, next_steps_in_direction))
+                    next_steps_in_direction = crucible_state.steps_in_direction + 1 if next_direction is crucible_state.direction else 1
+                    next_heat_loss_accum = self.grid[next_coord.i][next_coord.j] + heat_loss_accum
+                    next_crucible_state = (next_heat_loss_accum, CrucibleState(next_coord, next_direction, next_steps_in_direction))
 
                     heappush(priority_queue, next_crucible_state)
         return -1
@@ -152,11 +148,9 @@ class Day17:
 
 
 if __name__ == "__main__":
-    INPUT_FILEPATH = Path(__file__).parent / "data" / \
-        f"{Path(__file__).stem}.txt"
+    INPUT_FILEPATH = Path(__file__).parent / "data" / f"{Path(__file__).stem}.txt"
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--input', nargs='?',
-                        default=INPUT_FILEPATH, help=f"Path to data for {Path(__file__).stem}")
+    parser.add_argument('-i', '--input', nargs='?', default=INPUT_FILEPATH, help=f"Path to data for {Path(__file__).stem}")
     args = parser.parse_args()
 
     day17 = Day17(Path(args.input).absolute())

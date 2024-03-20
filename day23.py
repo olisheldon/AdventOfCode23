@@ -96,8 +96,7 @@ class PathTile(Enum):
             case cls.SLOPE_LEFT:
                 return [Move.LEFT]
             case cls.FOREST:
-                raise RuntimeError(
-                    f"Queried {path_tile}s possible moves.")
+                raise RuntimeError(f"Queried {path_tile}s possible moves.")
             case _:
                 raise RuntimeError(f"PathTile {path_tile} is not recognised.")
 
@@ -259,11 +258,9 @@ class Day23:
 
 
 if __name__ == "__main__":
-    INPUT_FILEPATH = Path(__file__).parent / "data" / \
-        f"{Path(__file__).stem}.txt"
+    INPUT_FILEPATH = Path(__file__).parent / "data" / f"{Path(__file__).stem}.txt"
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--input', nargs='?',
-                        default=INPUT_FILEPATH, help=f"Path to data for {Path(__file__).stem}")
+    parser.add_argument('-i', '--input', nargs='?', default=INPUT_FILEPATH, help=f"Path to data for {Path(__file__).stem}")
     args = parser.parse_args()
 
     day23 = Day23(Path(args.input).absolute())

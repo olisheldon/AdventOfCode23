@@ -115,8 +115,7 @@ class Card(CardHelperMixin, IntEnum):
             case 5:
                 return HandType.HIGH_CARD
             case _:
-                raise RuntimeError(
-                    f"Cards {cards} cannot be assigned a hand type.")
+                raise RuntimeError(f"Cards {cards} cannot be assigned a hand type.")
 
 
 class CardWithJoker(CardHelperMixin, IntEnum):
@@ -147,8 +146,7 @@ class CardWithJoker(CardHelperMixin, IntEnum):
                     for possible_cards in list_of_possible_cards:
                         possible_cards.append(card)
                 else:
-                    list_of_possible_cards = [possible_cards.copy() for _ in range(
-                        len(cards_without_jack)) for possible_cards in list_of_possible_cards]
+                    list_of_possible_cards = [possible_cards.copy() for _ in range(len(cards_without_jack)) for possible_cards in list_of_possible_cards]
                     cycle_cards = cycle(cards_without_jack)
                     for possible_cards in list_of_possible_cards:
                         possible_cards.append(next(cycle_cards))
@@ -176,8 +174,7 @@ class CardWithJoker(CardHelperMixin, IntEnum):
                 case 5:
                     best_hand = max(best_hand, HandType.HIGH_CARD)
                 case _:
-                    raise RuntimeError(
-                        f"did not recognise card {len(unique_cards)}")
+                    raise RuntimeError(f"did not recognise card {len(unique_cards)}")
         return best_hand
 
 
@@ -309,25 +306,21 @@ class Day7:
 
     def part_1(self) -> int:
 
-        hands_of_cards = self.create_hands_of_cards(
-            self.list_of_cards, self.bids, Card)
+        hands_of_cards = self.create_hands_of_cards(self.list_of_cards, self.bids, Card)
 
         return sum((i + 1) * hand_of_cards.bid for (i, hand_of_cards) in enumerate(sorted(hands_of_cards)))
 
     def part_2(self) -> int:
 
-        hands_of_cards = self.create_hands_of_cards(
-            self.list_of_cards, self.bids, CardWithJoker)
+        hands_of_cards = self.create_hands_of_cards(self.list_of_cards, self.bids, CardWithJoker)
 
         return sum((i + 1) * hand_of_cards.bid for (i, hand_of_cards) in enumerate(sorted(hands_of_cards)))
 
 
 if __name__ == "__main__":
-    INPUT_FILEPATH = Path(__file__).parent / "data" / \
-        f"{Path(__file__).stem}.txt"
+    INPUT_FILEPATH = Path(__file__).parent / "data" / f"{Path(__file__).stem}.txt"
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--input', nargs='?',
-                        default=INPUT_FILEPATH, help=f"Path to data for {Path(__file__).stem}")
+    parser.add_argument('-i', '--input', nargs='?', default=INPUT_FILEPATH, help=f"Path to data for {Path(__file__).stem}")
     args = parser.parse_args()
 
     day7 = Day7(Path(args.input).absolute())

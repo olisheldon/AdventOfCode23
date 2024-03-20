@@ -165,8 +165,7 @@ class Tile:
                     case _:
                         return Move.INVALID
             case TileType.GROUND:
-                raise RuntimeError(
-                    f"Tile type {move_in} should not be called with {self.__class__.__name__}.")
+                raise RuntimeError(f"Tile type {move_in} should not be called with {self.__class__.__name__}.")
             case _:
                 raise RuntimeError(f"Tile type {move_in} not recognised.")
 
@@ -198,7 +197,8 @@ class Maze:
         return self.__repr__(segment)
 
     def get_beginning_moves(self) -> list[Move]:
-        return list(move for move in Move if self.tiles[(self.start + Move.move_to_coord_offset(move)).i][(self.start + Move.move_to_coord_offset(move)).j].move(move) != Move.INVALID)
+        return list(move for move in Move if self.tiles[(self.start + Move.move_to_coord_offset(move)).i]
+                    [(self.start + Move.move_to_coord_offset(move)).j].move(move) != Move.INVALID)
 
     def traverse_pipes(self) -> int:
         beginning_moves: list[Move] = self.get_beginning_moves()
@@ -285,11 +285,9 @@ class Day10:
 
 
 if __name__ == "__main__":
-    INPUT_FILEPATH = Path(__file__).parent / "data" / \
-        f"{Path(__file__).stem}.txt"
+    INPUT_FILEPATH = Path(__file__).parent / "data" / f"{Path(__file__).stem}.txt"
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--input', nargs='?',
-                        default=INPUT_FILEPATH, help=f"Path to data for {Path(__file__).stem}")
+    parser.add_argument('-i', '--input', nargs='?', default=INPUT_FILEPATH, help=f"Path to data for {Path(__file__).stem}")
     args = parser.parse_args()
 
     day10 = Day10(Path(args.input).absolute())

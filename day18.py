@@ -18,8 +18,7 @@ class Coord:
         if isinstance(other, int):
             return self.__class__(other * self.i, other * self.j)
 
-        raise RuntimeError(
-            f"{self.__class__.__name__} does not support multiplication by {type(other)}")
+        raise RuntimeError(f"{self.__class__.__name__} does not support multiplication by {type(other)}")
 
     def __rmul__(self, other) -> 'Coord':
 
@@ -79,8 +78,7 @@ class ColourInstruction(ColourMixin, Instruction):
             case '3':
                 direction = Direction.U
             case _:
-                raise RuntimeError(
-                    f"{self.__class__.__name__} ending digit {ending_colour} is not recognised.")
+                raise RuntimeError(f"{self.__class__.__name__} ending digit {ending_colour} is not recognised.")
         self.direction = direction
 
 
@@ -130,8 +128,7 @@ class Day18:
         dig_plans: list[DigPlan] = []
         for line in self.parse_file():
             split_line = line.split()
-            dig_plan = DigPlan(Direction[split_line[0]], int(
-                split_line[1]), split_line[-1][2:-1])
+            dig_plan = DigPlan(Direction[split_line[0]], int(split_line[1]), split_line[-1][2:-1])
             dig_plans.append(dig_plan)
         return dig_plans
 
@@ -140,18 +137,15 @@ class Day18:
         return digger.dig()
 
     def part_2(self) -> int:
-        instructions = [ColourInstruction(dig_plan.direction, dig_plan.steps,
-                                          dig_plan.colour) for dig_plan in self.dig_plans]
+        instructions = [ColourInstruction(dig_plan.direction, dig_plan.steps, dig_plan.colour) for dig_plan in self.dig_plans]
         digger = Digger(instructions)
         return digger.dig()
 
 
 if __name__ == "__main__":
-    INPUT_FILEPATH = Path(__file__).parent / "data" / \
-        f"{Path(__file__).stem}.txt"
+    INPUT_FILEPATH = Path(__file__).parent / "data" / f"{Path(__file__).stem}.txt"
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--input', nargs='?',
-                        default=INPUT_FILEPATH, help=f"Path to data for {Path(__file__).stem}")
+    parser.add_argument('-i', '--input', nargs='?', default=INPUT_FILEPATH, help=f"Path to data for {Path(__file__).stem}")
     args = parser.parse_args()
 
     day18 = Day18(Path(args.input).absolute())

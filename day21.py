@@ -19,8 +19,7 @@ class TileType(Enum):
             case '#':
                 return cls.ROCK
             case _:
-                raise RuntimeError(
-                    f"{cls.__class__.__name__} {c} is not recognised.")
+                raise RuntimeError(f"{cls.__class__.__name__} {c} is not recognised.")
 
     @classmethod
     def from_tile(cls, c: 'TileType') -> str:
@@ -32,8 +31,7 @@ class TileType(Enum):
             case cls.ROCK:
                 return '#'
             case _:
-                raise RuntimeError(
-                    f"{cls.__class__.__name__} {c} is not recognised.")
+                raise RuntimeError(f"{cls.__class__.__name__} {c} is not recognised.")
 
 
 class PositionType(Flag):
@@ -48,8 +46,7 @@ class PositionType(Flag):
             case cls.UNREACHABLE:
                 return '.'
             case _:
-                raise RuntimeError(
-                    f"{cls.__class__.__name__} {c} is not recognised.")
+                raise RuntimeError(f"{cls.__class__.__name__} {c} is not recognised.")
 
 
 class MapTile:
@@ -104,11 +101,11 @@ class Map:
                     for row_index_offset, column_index_offset in ((0, -1), (0, 1), (1, 0), (-1, 0)):
                         new_row_index = row_index + row_index_offset
                         new_column_index = column_index + column_index_offset
-                        if new_row_index in self.row_limits and new_column_index in self.column_limits \
-                                and self.map[new_row_index][new_column_index].tile_type is not TileType.ROCK:
+                        if (new_row_index in self.row_limits and
+                            new_column_index in self.column_limits and
+                                self.map[new_row_index][new_column_index].tile_type is not TileType.ROCK):
 
-                            new_reachable_coords.add(
-                                Coord(new_row_index, new_column_index))
+                            new_reachable_coords.add(Coord(new_row_index, new_column_index))
 
         for coord in new_reachable_coords:
             self.map[coord.i][coord.j].position_type = PositionType.REACHABLE
@@ -153,11 +150,9 @@ class Day21:
 
 
 if __name__ == "__main__":
-    INPUT_FILEPATH = Path(__file__).parent / "data" / \
-        f"{Path(__file__).stem}.txt"
+    INPUT_FILEPATH = Path(__file__).parent / "data" / f"{Path(__file__).stem}.txt"
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--input', nargs='?',
-                        default=INPUT_FILEPATH, help=f"Path to data for {Path(__file__).stem}")
+    parser.add_argument('-i', '--input', nargs='?', default=INPUT_FILEPATH, help=f"Path to data for {Path(__file__).stem}")
     args = parser.parse_args()
 
     day21 = Day21(Path(args.input).absolute())

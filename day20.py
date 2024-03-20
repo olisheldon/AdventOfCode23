@@ -63,8 +63,7 @@ class Message:
             case PulseType.LOW:
                 Message.number_of_low_pulses += 1
             case _:
-                raise RuntimeError(
-                    f"PulseType {self.pulse_type} is not recognised.")
+                raise RuntimeError(f"PulseType {self.pulse_type} is not recognised.")
 
 
 class ModuleBase(metaclass=ABCMeta):
@@ -104,8 +103,7 @@ class ModuleBase(metaclass=ABCMeta):
             case ModuleType.BROADCASTER:
                 return Broadcast(name, split_destinations)
             case _:
-                raise RuntimeError(
-                    f"ModuleType {module_type} is not recognised.")
+                raise RuntimeError(f"ModuleType {module_type} is not recognised.")
 
 
 class FlipFlop(ModuleBase):
@@ -203,14 +201,12 @@ class Motherboard:
 
     def press_button(self, iterations: int = 1):
         for _ in range(iterations):
-            button_message = self.modules["broadcaster"].handle(
-                Message(PulseType.LOW, "button", "broadcaster"))
+            button_message = self.modules["broadcaster"].handle(Message(PulseType.LOW, "button", "broadcaster"))
             self.message_log.extend(button_message)
             self.deque.extend(button_message)
             while self.deque:
                 message = self.deque.popleft()
-                new_messages = self.modules[message.destination_str].handle(
-                    message)
+                new_messages = self.modules[message.destination_str].handle(message)
                 self.message_log.extend(new_messages)
                 self.deque.extend(new_messages)
 
@@ -239,11 +235,9 @@ class Day20:
 
 
 if __name__ == "__main__":
-    INPUT_FILEPATH = Path(__file__).parent / "data" / \
-        f"{Path(__file__).stem}.txt"
+    INPUT_FILEPATH = Path(__file__).parent / "data" / f"{Path(__file__).stem}.txt"
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--input', nargs='?',
-                        default=INPUT_FILEPATH, help=f"Path to data for {Path(__file__).stem}")
+    parser.add_argument('-i', '--input', nargs='?', default=INPUT_FILEPATH, help=f"Path to data for {Path(__file__).stem}")
     args = parser.parse_args()
 
     day20 = Day20(Path(args.input).absolute())

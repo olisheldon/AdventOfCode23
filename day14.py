@@ -42,8 +42,7 @@ class PlatformObject(Enum):
                 case self.EMPTY_SPACE:
                     return True
                 case _:
-                    raise RuntimeError(
-                        f"Platform object {other_platform_object} is not recognised.")
+                    raise RuntimeError(f"Platform object {other_platform_object} is not recognised.")
         return False
 
     @property
@@ -73,7 +72,8 @@ class ControlPlatform:
         return self.__repr__()
 
     def __repr__(self) -> str:
-        return "\n".join("".join([PlatformObject.from_platform_object(element) for element in row]) for row in self.control_platform) + "\n" + '&' * len(self.control_platform[0])
+        return "\n".join("".join([PlatformObject.from_platform_object(element) for element in row])
+                         for row in self.control_platform) + "\n" + '&' * len(self.control_platform[0])
 
     @staticmethod
     def create_control_platform(control_platform: list[list[PlatformObject]]) -> 'ControlPlatform':
@@ -194,24 +194,20 @@ class Day14:
         return self.parse_file()
 
     def part_1(self) -> int:
-        control_platform = ControlPlatform.create_control_platform(
-            [[PlatformObject.from_str(c) for c in s] for s in self.parse_file()])
+        control_platform = ControlPlatform.create_control_platform([[PlatformObject.from_str(c) for c in s] for s in self.parse_file()])
         control_platform.tilt()
         return control_platform.score
 
     def part_2(self) -> int:
-        control_platform = ControlPlatform.create_control_platform(
-            [[PlatformObject.from_str(c) for c in s] for s in self.parse_file()])
+        control_platform = ControlPlatform.create_control_platform([[PlatformObject.from_str(c) for c in s] for s in self.parse_file()])
         control_platform.cycle()
         return control_platform.score
 
 
 if __name__ == "__main__":
-    INPUT_FILEPATH = Path(__file__).parent / "data" / \
-        f"{Path(__file__).stem}.txt"
+    INPUT_FILEPATH = Path(__file__).parent / "data" / f"{Path(__file__).stem}.txt"
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--input', nargs='?',
-                        default=INPUT_FILEPATH, help=f"Path to data for {Path(__file__).stem}")
+    parser.add_argument('-i', '--input', nargs='?', default=INPUT_FILEPATH, help=f"Path to data for {Path(__file__).stem}")
     args = parser.parse_args()
 
     day14 = Day14(Path(args.input).absolute())

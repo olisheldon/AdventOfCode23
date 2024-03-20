@@ -38,7 +38,8 @@ class Hailstone:
         '''
         return (self.velocity.y, -self.velocity.x, self.velocity.y * self.position.x - self.velocity.x * self.position.y)
 
-    def does_intersect(self, other: 'Hailstone', x_lower_bound: int = 200000000000000, x_upper_bound: int = 400000000000000, y_lower_bound: int = 200000000000000, y_upper_bound: int = 400000000000000):
+    def does_intersect(self, other: 'Hailstone', x_lower_bound: int = 200000000000000, x_upper_bound: int = 400000000000000,
+                       y_lower_bound: int = 200000000000000, y_upper_bound: int = 400000000000000):
         a1, b1, c1 = self.linearize()
         a2, b2, c2 = other.linearize()
 
@@ -62,8 +63,7 @@ class Day24:
 
     def __init__(self, filepath: Path):
         self.filepath = filepath
-        self.hailstones: list[Hailstone] = [Hailstone.from_str(
-            hailstone_str) for hailstone_str in self.parse()]
+        self.hailstones: list[Hailstone] = [Hailstone.from_str(hailstone_str) for hailstone_str in self.parse()]
 
     def parse_file(self) -> list[str]:
         with open(self.filepath, 'r', encoding="utf-8") as f:
@@ -80,11 +80,9 @@ class Day24:
 
 
 if __name__ == "__main__":
-    INPUT_FILEPATH = Path(__file__).parent / "data" / \
-        f"{Path(__file__).stem}.txt"
+    INPUT_FILEPATH = Path(__file__).parent / "data" / f"{Path(__file__).stem}.txt"
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--input', nargs='?',
-                        default=INPUT_FILEPATH, help=f"Path to data for {Path(__file__).stem}")
+    parser.add_argument('-i', '--input', nargs='?', default=INPUT_FILEPATH, help=f"Path to data for {Path(__file__).stem}")
     args = parser.parse_args()
 
     day24 = Day24(Path(args.input).absolute())

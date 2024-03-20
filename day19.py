@@ -79,7 +79,10 @@ class PartInterval:
 
     @property
     def length_products(self) -> int:
-        return self.intervals[PartCategory.x].length * self.intervals[PartCategory.m].length * self.intervals[PartCategory.a].length * self.intervals[PartCategory.s].length
+        return (self.intervals[PartCategory.x].length *
+                self.intervals[PartCategory.m].length *
+                self.intervals[PartCategory.a].length *
+                self.intervals[PartCategory.s].length)
 
 
 class Rule:
@@ -98,8 +101,7 @@ class Rule:
             self.outcome: str = rule_str
 
     def partition(self, part_interval: PartInterval) -> tuple[PartInterval, PartInterval]:
-        true_interval, false_interval = Operator.partition(
-            self.operator, part_interval.get_interval(self.part_category), self.value)
+        true_interval, false_interval = Operator.partition(self.operator, part_interval.get_interval(self.part_category), self.value)
         true_part_interval, false_part_interval = part_interval.copy(), part_interval.copy()
         true_part_interval.intervals[self.part_category] = true_interval
         false_part_interval.intervals[self.part_category] = false_interval
@@ -116,8 +118,7 @@ class Workflow:
     def query_interval(self, part_interval: PartInterval) -> list[tuple[PartInterval, str]]:
         further_processing: list[tuple[PartInterval, str]] = []
         for rule in self.rules:
-            pass_part_interval, fail_part_interval = rule.partition(
-                part_interval)
+            pass_part_interval, fail_part_interval = rule.partition(part_interval)
             if pass_part_interval.valid:
                 further_processing.append((pass_part_interval, rule.outcome))
             if fail_part_interval.valid:
@@ -147,12 +148,10 @@ class Workflows:
 
         total_part_intervals = []
 
-        further_processing = self.workflows[query_workflow].query_interval(
-            part_interval)
+        further_processing = self.workflows[query_workflow].query_interval(part_interval)
 
         for part_interval, target_workflow in further_processing:
-            total_part_intervals += self.query_interval(
-                part_interval, target_workflow)
+            total_part_intervals += self.query_interval(part_interval, target_workflow)
 
         return total_part_intervals
 
@@ -196,22 +195,18 @@ class Day19:
         return workflows, parts
 
     def part_1(self) -> int:
-        part_intervals = list(PartInterval({PartCategory(k): Interval(
-            v, v + 1) for k, v in part.items()}) for part in self.parts)
+        part_intervals = list(PartInterval({PartCategory(k): Interval(v, v + 1) for k, v in part.items()}) for part in self.parts)
         return sum(queried_part_interval.rating for part_interval in part_intervals for queried_part_interval in self.workflows.query_interval(part_interval))
 
     def part_2(self) -> int:
-        part_category_intervals = PartInterval(
-            {part_category: Interval(1, 4000) for part_category in PartCategory})
+        part_category_intervals = PartInterval({part_category: Interval(1, 4000) for part_category in PartCategory})
         return sum(part_interval.length_products for part_interval in self.workflows.query_interval(part_category_intervals))
 
 
 if __name__ == "__main__":
-    INPUT_FILEPATH = Path(__file__).parent / "data" / \
-        f"{Path(__file__).stem}.txt"
+    INPUT_FILEPATH = Path(__file__).parent / "data" / f"{Path(__file__).stem}.txt"
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--input', nargs='?',
-                        default=INPUT_FILEPATH, help=f"Path to data for {Path(__file__).stem}")
+    parser.add_argument('-i', '--input', nargs='?', default=INPUT_FILEPATH, help=f"Path to data for {Path(__file__).stem}")
     args = parser.parse_args()
 
     day19 = Day19(Path(args.input).absolute())

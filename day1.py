@@ -29,8 +29,7 @@ class ParseType(Enum):
             case cls.DIGITS_AND_STRINGS:
                 return cls.get_string_interpret(cls.DIGITS) | cls.get_string_interpret(cls.STRINGS)
             case _:
-                raise RuntimeError(
-                    f"ParseType {parse_type} is not recognised.")
+                raise RuntimeError(f"ParseType {parse_type} is not recognised.")
 
 
 class CalibrationLine:
@@ -43,10 +42,9 @@ class CalibrationLine:
         return 10 * left_edge_value + right_edge_value
 
     def _parse_boundary(self, parse_type) -> tuple[int, int]:
-        string_interpret: dict[str,
-                               int] = ParseType.get_string_interpret(parse_type)
-        left_edge_value, right_edge_value = self._parse(self.line, string_interpret), self._parse(
-            self.line[::-1], {k[::-1]: v for k, v in string_interpret.items()})
+        string_interpret: dict[str, int] = ParseType.get_string_interpret(parse_type)
+        left_edge_value, right_edge_value = (self._parse(self.line, string_interpret), self._parse(
+            self.line[::-1], {k[::-1]: v for k, v in string_interpret.items()}))
         assert left_edge_value > -1 and right_edge_value > -1
         return left_edge_value, right_edge_value
 
@@ -80,11 +78,9 @@ class Day1:
 
 
 if __name__ == "__main__":
-    INPUT_FILEPATH = Path(__file__).parent / "data" / \
-        f"{Path(__file__).stem}.txt"
+    INPUT_FILEPATH = Path(__file__).parent / "data" / f"{Path(__file__).stem}.txt"
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--input', nargs='?',
-                        default=INPUT_FILEPATH, help=f"Path to data for {Path(__file__).stem}")
+    parser.add_argument('-i', '--input', nargs='?', default=INPUT_FILEPATH, help=f"Path to data for {Path(__file__).stem}")
     args = parser.parse_args()
 
     day1 = Day1(Path(args.input).absolute())

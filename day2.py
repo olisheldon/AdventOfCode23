@@ -24,8 +24,7 @@ class DiceBag:
 
     def valid(self) -> bool:
         if set(self._bag.keys()) != set(die for die in DiceType):
-            raise RuntimeError(
-                f"Trying to check validity of invalid die dice_set: {self._bag.items()}")
+            raise RuntimeError(f"Trying to check validity of invalid die dice_set: {self._bag.items()}")
 
         for die in DiceType:
             if self._bag[die] > DiceBag.maximum_bag_contents[die]:
@@ -79,7 +78,7 @@ class Day2:
         games = []
         for line in self.parse_file():
             game = Game(int(line.split()[1][:-1]))
-            info = line[line.find(':')+2:]
+            info = line[line.find(':') + 2:]
             dice_sets = info.split(';')
             for dice_set in dice_sets:
                 set_of_dice = DiceBag()
@@ -95,8 +94,7 @@ class Day2:
         return sum(game.game_id for game in self.games if game.valid())
 
     def part_2(self) -> int:
-        max_dice_required_per_game = (
-            game.max_dice_set.get_dice().values() for game in self.games)
+        max_dice_required_per_game = (game.max_dice_set.get_dice().values() for game in self.games)
         power = 0
         for max_dice_nums in max_dice_required_per_game:
             power += reduce((lambda x, y: x * y), max_dice_nums)
@@ -104,11 +102,9 @@ class Day2:
 
 
 if __name__ == "__main__":
-    INPUT_FILEPATH = Path(__file__).parent / "data" / \
-        f"{Path(__file__).stem}.txt"
+    INPUT_FILEPATH = Path(__file__).parent / "data" / f"{Path(__file__).stem}.txt"
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--input', nargs='?',
-                        default=INPUT_FILEPATH, help=f"Path to data for {Path(__file__).stem}")
+    parser.add_argument('-i', '--input', nargs='?', default=INPUT_FILEPATH, help=f"Path to data for {Path(__file__).stem}")
     args = parser.parse_args()
 
     day2 = Day2(Path(args.input).absolute())

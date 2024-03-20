@@ -49,8 +49,7 @@ class MirrorQueryResponse(Enum):
             case MirrorTyle.VERTICAL_SPLITTER | MirrorTyle.HORIZONTAL_SPLITTER:
                 return cls.SPLIT_LASERS
             case _:
-                raise RuntimeError(
-                    f"MirrorTyle {mirror_tyle} is not recognised.")
+                raise RuntimeError(f"MirrorTyle {mirror_tyle} is not recognised.")
 
 
 @dataclass(frozen=True)
@@ -145,16 +144,14 @@ class MirrorTyle(Enum):
                     case Direction.NORTH:
                         directions = [Direction.NORTH]
             case _:
-                raise RuntimeError(
-                    f"MirrorTyle {mirror_tyle} should not use {__class__}.")
+                raise RuntimeError(f"MirrorTyle {mirror_tyle} should not use {__class__}.")
         return directions
 
 
 class Mirror:
 
     def __init__(self, mirror: list[list[str]], lasers: list[Laser] = [Laser(Coord(0, 0), Direction.EAST)]):
-        self.mirror: list[list[MirrorTyle]] = list(
-            list(MirrorTyle.from_str(tyle) for tyle in row) for row in mirror)
+        self.mirror: list[list[MirrorTyle]] = list(list(MirrorTyle.from_str(tyle) for tyle in row) for row in mirror)
         self.lasers: list[Laser] = lasers
 
     def _valid_coord(self, coord: Coord) -> bool:
@@ -167,11 +164,9 @@ class Mirror:
             laser = self.lasers.pop()
             if laser not in laser_states:
                 laser_states.add(laser)
-                directions = MirrorTyle.query(
-                    self.mirror[laser.coord.i][laser.coord.j], laser.direction)
+                directions = MirrorTyle.query(self.mirror[laser.coord.i][laser.coord.j], laser.direction)
                 for direction in directions:
-                    new_laser = Laser(
-                        laser.coord + Direction.move(direction), direction)
+                    new_laser = Laser(laser.coord + Direction.move(direction), direction)
                     if self._valid_coord(new_laser.coord):
                         self.lasers.append(new_laser)
 
@@ -210,11 +205,9 @@ class Day16:
 
 
 if __name__ == "__main__":
-    INPUT_FILEPATH = Path(__file__).parent / "data" / \
-        f"{Path(__file__).stem}.txt"
+    INPUT_FILEPATH = Path(__file__).parent / "data" / f"{Path(__file__).stem}.txt"
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--input', nargs='?',
-                        default=INPUT_FILEPATH, help=f"Path to data for {Path(__file__).stem}")
+    parser.add_argument('-i', '--input', nargs='?', default=INPUT_FILEPATH, help=f"Path to data for {Path(__file__).stem}")
     args = parser.parse_args()
 
     day16 = Day16(Path(args.input).absolute())

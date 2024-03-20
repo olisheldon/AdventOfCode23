@@ -43,7 +43,8 @@ class Pattern:
         if not smudge:
             return self._find_reflection_index(Pattern.submirror_equality, rowwise=True), self._find_reflection_index(Pattern.submirror_equality, rowwise=False)
         else:
-            return self._find_reflection_index(Pattern.submirror_one_difference, rowwise=True), self._find_reflection_index(Pattern.submirror_one_difference, rowwise=False)
+            return self._find_reflection_index(Pattern.submirror_one_difference, rowwise=True), self._find_reflection_index(
+                Pattern.submirror_one_difference, rowwise=False)
 
     def _find_reflection_index(self, predicate: Callable[[list[list[Covering]], list[list[Covering]]], bool], rowwise: bool = True) -> int:
 
@@ -72,8 +73,7 @@ class Pattern:
     def submirror_one_difference(pattern1: list[list[Covering]], pattern2: list[list[Covering]]) -> bool:
         total_differences = 0
         for row1, row2 in zip(pattern1, pattern2):
-            num_mismatches_in_row = sum(
-                0 if elem1 == elem2 else 1 for elem1, elem2 in zip(row1, row2))
+            num_mismatches_in_row = sum(0 if elem1 == elem2 else 1 for elem1, elem2 in zip(row1, row2))
             total_differences += num_mismatches_in_row
         return total_differences == 1
 
@@ -108,11 +108,9 @@ class Day13:
 
 
 if __name__ == "__main__":
-    INPUT_FILEPATH = Path(__file__).parent / "data" / \
-        f"{Path(__file__).stem}.txt"
+    INPUT_FILEPATH = Path(__file__).parent / "data" / f"{Path(__file__).stem}.txt"
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--input', nargs='?',
-                        default=INPUT_FILEPATH, help=f"Path to data for {Path(__file__).stem}")
+    parser.add_argument('-i', '--input', nargs='?', default=INPUT_FILEPATH, help=f"Path to data for {Path(__file__).stem}")
     args = parser.parse_args()
 
     day13 = Day13(Path(args.input).absolute())

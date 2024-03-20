@@ -38,8 +38,7 @@ class Brick:
 class BrickContainer:
 
     def __init__(self, bricks: list[str]):
-        self.snapshot_bricks: tuple[Brick, ...] = tuple(
-            Brick(line) for line in bricks)
+        self.snapshot_bricks: tuple[Brick, ...] = tuple(Brick(line) for line in bricks)
 
     @staticmethod
     def _fall(bricks: list[Brick]) -> list[Brick]:
@@ -72,8 +71,7 @@ class BrickContainer:
 
         fallen_bricks = self._fall(list(self.snapshot_bricks))
 
-        brick_supports_values, values_that_support_brick = self._bidirectional_supports(
-            fallen_bricks)
+        brick_supports_values, values_that_support_brick = self._bidirectional_supports(fallen_bricks)
 
         safe_count = 0
 
@@ -87,14 +85,12 @@ class BrickContainer:
 
         fallen_bricks = self._fall(list(self.snapshot_bricks))
 
-        brick_supports_values, values_that_support_brick = self._bidirectional_supports(
-            fallen_bricks)
+        brick_supports_values, values_that_support_brick = self._bidirectional_supports(fallen_bricks)
 
         chain_reaction_count = 0
 
         for dis_brick in range(len(fallen_bricks)):
-            q = deque(other_brick for other_brick in brick_supports_values[dis_brick] if len(
-                values_that_support_brick[other_brick]) == 1)
+            q = deque(other_brick for other_brick in brick_supports_values[dis_brick] if len(values_that_support_brick[other_brick]) == 1)
             falling: set[int] = set(q)
             falling.add(dis_brick)
 
@@ -128,11 +124,9 @@ class Day22:
 
 
 if __name__ == "__main__":
-    INPUT_FILEPATH = Path(__file__).parent / "data" / \
-        f"{Path(__file__).stem}.txt"
+    INPUT_FILEPATH = Path(__file__).parent / "data" / f"{Path(__file__).stem}.txt"
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--input', nargs='?',
-                        default=INPUT_FILEPATH, help=f"Path to data for {Path(__file__).stem}")
+    parser.add_argument('-i', '--input', nargs='?', default=INPUT_FILEPATH, help=f"Path to data for {Path(__file__).stem}")
     args = parser.parse_args()
 
     day22 = Day22(Path(args.input).absolute())

@@ -29,12 +29,10 @@ class Day6:
     def __init__(self, filepath: Path):
         self.filepath = filepath
         times, distances = self.parse()
-        self.individual_races: list[RacePossibilities] = [RacePossibilities(
-            time, distance) for time, distance in zip(times, distances)]
+        self.individual_races: list[RacePossibilities] = [RacePossibilities(time, distance) for time, distance in zip(times, distances)]
 
         time, distance = "".join(map(str, times)), "".join(map(str, distances))
-        self.one_race: RacePossibilities = RacePossibilities(
-            int(time), int(distance))
+        self.one_race: RacePossibilities = RacePossibilities(int(time), int(distance))
 
     def parse_file(self) -> list[str]:
         with open(self.filepath, 'r', encoding="utf-8") as f:
@@ -56,11 +54,9 @@ class Day6:
 
 
 if __name__ == "__main__":
-    INPUT_FILEPATH = Path(__file__).parent / "data" / \
-        f"{Path(__file__).stem}.txt"
+    INPUT_FILEPATH = Path(__file__).parent / "data" / f"{Path(__file__).stem}.txt"
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--input', nargs='?',
-                        default=INPUT_FILEPATH, help=f"Path to data for {Path(__file__).stem}")
+    parser.add_argument('-i', '--input', nargs='?', default=INPUT_FILEPATH, help=f"Path to data for {Path(__file__).stem}")
     args = parser.parse_args()
 
     day6 = Day6(Path(args.input).absolute())

@@ -7,8 +7,7 @@ class Scratchcard:
     def __init__(self, scratchcard_numbers: list[int], winning_numbers: list[int]):
         self.scratchcard_numbers: set[int] = set(scratchcard_numbers)
         self.winning_numbers: set[int] = set(winning_numbers)
-        self.number_of_winners: int = len(
-            self.scratchcard_numbers.intersection(self.winning_numbers))
+        self.number_of_winners: int = len(self.scratchcard_numbers.intersection(self.winning_numbers))
 
 
 class MultipleScratchcards(list):
@@ -23,8 +22,7 @@ class Day4:
 
     def __init__(self, filepath: Path):
         self.filepath = filepath
-        self.multiple_scratchcards: MultipleScratchcards = MultipleScratchcards(
-            self.parse())
+        self.multiple_scratchcards: MultipleScratchcards = MultipleScratchcards(self.parse())
 
     def part_1(self) -> int:
         return sum(int(2**(scratchcard.number_of_winners - 1)) for scratchcard in self.multiple_scratchcards)
@@ -57,11 +55,9 @@ class Day4:
 
 
 if __name__ == "__main__":
-    INPUT_FILEPATH = Path(__file__).parent / "data" / \
-        f"{Path(__file__).stem}.txt"
+    INPUT_FILEPATH = Path(__file__).parent / "data" / f"{Path(__file__).stem}.txt"
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--input', nargs='?',
-                        default=INPUT_FILEPATH, help=f"Path to data for {Path(__file__).stem}")
+    parser.add_argument('-i', '--input', nargs='?', default=INPUT_FILEPATH, help=f"Path to data for {Path(__file__).stem}")
     args = parser.parse_args()
 
     day4 = Day4(Path(args.input).absolute())

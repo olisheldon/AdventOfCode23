@@ -31,8 +31,7 @@ class Image:
     def __init__(self, image_str: list[str]):
         self.image: list[list[Pixel]] = Image.create_image(image_str)
         self.galaxies: list[Coord] = Image.extract_galaxies(self.image)
-        empty_columns, empty_rows = self.find_expanded_columns_and_rows(
-            self.image)
+        empty_columns, empty_rows = self.find_expanded_columns_and_rows(self.image)
         self.empty_columns: set[int] = empty_columns
         self.empty_rows: set[int] = empty_rows
 
@@ -93,11 +92,9 @@ class Day11:
 
 
 if __name__ == "__main__":
-    INPUT_FILEPATH = Path(__file__).parent / "data" / \
-        f"{Path(__file__).stem}.txt"
+    INPUT_FILEPATH = Path(__file__).parent / "data" / f"{Path(__file__).stem}.txt"
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--input', nargs='?',
-                        default=INPUT_FILEPATH, help=f"Path to data for {Path(__file__).stem}")
+    parser.add_argument('-i', '--input', nargs='?', default=INPUT_FILEPATH, help=f"Path to data for {Path(__file__).stem}")
     args = parser.parse_args()
 
     day11 = Day11(Path(args.input).absolute())
