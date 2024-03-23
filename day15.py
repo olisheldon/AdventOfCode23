@@ -106,8 +106,7 @@ class Day15:
         return sum(map(Hasher.hash_value, self.parse()))
 
     def part_2(self) -> int:
-        sequence_elements: list[InitSequenceElementBase] = [
-            InitSequenceElementBase.create_init_sequence_element(s) for s in self.parse()]
+        sequence_elements: list[InitSequenceElementBase] = [InitSequenceElementBase.create_init_sequence_element(s) for s in self.parse()]
         boxes = Boxes()
         boxes.process_sequence(sequence_elements)
         return boxes.focusing_power

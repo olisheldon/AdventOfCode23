@@ -5,7 +5,7 @@ from typing import Sequence
 from collections import deque
 
 
-@dataclass()
+@dataclass
 class Coord:
     x: int
     y: int

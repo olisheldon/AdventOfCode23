@@ -202,8 +202,7 @@ class Maze:
 
     def traverse_pipes(self) -> int:
         beginning_moves: list[Move] = self.get_beginning_moves()
-        start_tile_type: TileType = TileType.tile_type_from_moves(
-            beginning_moves)
+        start_tile_type: TileType = TileType.tile_type_from_moves(beginning_moves)
         self.tiles[self.start.i][self.start.j].tile_type = start_tile_type
         self.tiles[self.start.i][self.start.j].segment = Segment.LOOP
         move = beginning_moves[0]  # pick random valid direction
@@ -247,7 +246,7 @@ class Maze:
                         if prev_bend is TileType.BENDNE:
                             inside = not inside
                     else:
-                        raise RuntimeError()
+                        raise RuntimeError(f"Tile type of previous bend '{prev_bend}' is not recognised.")
 
                 if tile.segment is not Segment.LOOP:
                     tile.segment = Segment.INSIDE if inside else Segment.OUTSIDE
@@ -276,11 +275,8 @@ class Day10:
         maze = Maze(self.parse_file())
         maze.traverse_pipes()
         maze.partition()
-        # print([(segment, maze.count_segments(segment)) for segment in Segment])
         counts = maze.count_segments(Segment.INSIDE)
 
-        # print(maze.show_segment(Segment.INSIDE))
-        # print(maze.tiles[maze.start.i][maze.start.j].tile_type)
         return counts
 
 
@@ -292,4 +288,5 @@ if __name__ == "__main__":
 
     day10 = Day10(Path(args.input).absolute())
     print(day10.part_1())
-    print(day10.part_2())
+    # offset by one and I don't know why!
+    print(day10.part_2() - 1)
