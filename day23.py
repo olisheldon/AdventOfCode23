@@ -187,7 +187,9 @@ class HikingMap:
                 # not a point of interest, pathfind out and add to stack if valid move
                 for new_move in PathTile.possible_moves(self.hiking_map[other_coord.i][other_coord.j]):
                     new_coord = other_coord + Move.move(new_move)
-                    if self._within_boundary(new_coord) and self.hiking_map[new_coord.i][new_coord.j] is not PathTile.FOREST and new_coord not in visited_tiles:
+                    if (self._within_boundary(new_coord) and
+                        self.hiking_map[new_coord.i][new_coord.j] is not PathTile.FOREST and
+                        new_coord not in visited_tiles):
                         stack.append((dist_to_coord + 1, new_coord))
                         visited_tiles.add(new_coord)
 
